@@ -8,3 +8,6 @@ Change files:
 
 run cassandra cluster
 sudo cassandra -R -Dcassandra.ignore_dc=true -Dcassandra.ignore_rack=true
+
+initiate calling cqlsh ip, for example
+cqlsh 10.0.0.4
