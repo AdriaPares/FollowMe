@@ -17,7 +17,7 @@ with open('api_keys.json') as api_keys_json:
 # with open('./twitch_api/Twitch_API_Client_ID.txt','r') as file:
 #     Twitch_API_Client_ID = file.read()[:-1]#last character is /n, not needed.
     
-with open('./streamer_names.csv','r') as file:
+with open('./streamer_names.csv', 'r') as file:
     #reader gives list of lists: [['a'],['b']], hence comprehension to make things easy
     streamer_names = [streamer[0] for streamer in list(csv.reader(file))]
     #maybe not needed, but this is a very rough first draft
