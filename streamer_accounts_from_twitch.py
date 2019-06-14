@@ -22,8 +22,6 @@ with open('./streamer_names.csv', 'r') as file:
     streamer_names = [streamer[0] for streamer in list(csv.reader(file))]
     #maybe not needed, but this is a very rough first draft
 
-   
-
 for name in streamer_names:
     with open('./streamer_info/channel_'+name+'.txt', 'wb+') as f: 
         c = pycurl.Curl()
