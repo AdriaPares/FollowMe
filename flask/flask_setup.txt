@@ -1,0 +1,6 @@
+export FLASK_APP=simple_flask_cassandra.py
+
+flask run --host=0.0.0.0
+
+connect to web by IP:5000/cassandra_test
+remember to open the corresponding port
