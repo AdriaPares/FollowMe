@@ -1,0 +1,8 @@
+#Add all setups we do here to replicate later with terraform
+
+#Python libraries
+
+pip install python-kafka
+pip install cassandra-driver --user
+pip install boto3
+
