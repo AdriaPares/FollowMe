@@ -25,9 +25,9 @@ with open('./streamer_names.csv', 'r') as file:
 for name in streamer_names:
     with open('./streamer_info/channel_'+name+'.txt', 'wb+') as f: 
         c = pycurl.Curl()
-        c.setopt(c.URL, 'https://api.twitch.tv/api/channels/'+name+'/panels' ) 
+        c.setopt(c.URL, 'https://api.twitch.tv/api/channels/'+name+'/panels')
         header = ['Client-ID: '+api_keys['twitch']]
-        c.setopt(pycurl.HTTPHEADER, header )
+        c.setopt(pycurl.HTTPHEADER, header)
         c.setopt(c.WRITEFUNCTION, f.write)
         c.perform()
 

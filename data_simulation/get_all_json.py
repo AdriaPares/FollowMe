@@ -71,7 +71,7 @@ def get_youtube_data(accounts, api_key, path="./api_dumps/youtube_dump/"):
     # subs = json.loads(data)['items']
     with open(path + 'youtube_' + accounts['player'] + '.json', 'w+') as f:
         if data != '':
-            json.dump(json.loads(data), f)
+            json.dump(json.loads(data.decode('utf-8')), f)
 
     # print(subs)
 
@@ -91,4 +91,5 @@ with open('accounts.json') as accounts_json:
         get_twitch_data(streamer, api_keys)
         get_twitter_data(streamer, api_keys)
         get_youtube_data(streamer, api_keys)
+        print('hey')
 print(time.time() - init)
