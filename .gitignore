@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 api_keys.json
+*twitch_*.json
 
 # C extensions
 *.so

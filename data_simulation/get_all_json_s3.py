@@ -14,6 +14,8 @@ Created on Tue Jun 11 09:54:49 2019
 
 # There's a ton of problems with the names, for now just go!
 
+# Import only what is needed...
+
 import json
 import glob
 import tweepy
@@ -24,7 +26,7 @@ import boto3
 
 
 def write_s3(s3_client, file_name, key_name, s3_bucket_name='insight-api-dumps'):
-    s3_client.upload_file(file_name, s3_bucket_name, key_name)
+    s3_client.upload_file(file_name, s3_bucket_name, time.strftime("%Y%m%d_%H%M%S_")+key_name)
     print('s3 done')
     time.sleep(20)
 
