@@ -1,51 +1,58 @@
 import boto3
 import json
 import glob
-import numpy as np
+# import numpy as np
 import time
-import datetime
+import datetime as dt
 
 
 def number_of_simulations(json_file_names):
-    hhmmss_timestamps = []
+    timestamps = []
     for name in json_file_names:
-        hhmmss_timestamps.append(name.split('_')[1].split(':'))
-    # there has to be a better way to do this for sure
-    hhmmss_array = np.array([int(x) - int(y) for x, y in zip(hhmmss_timestamps[0], hhmmss_timestamps[1])])
-    return np.abs(np.sum(np.array([3600, 60, 1]) * hhmmss_array))
+        timestamps.append(dt.datetime.strptime(name[:19], '%Y-%m-%d_%H:%M:%S'))
+    # print(int(abs(timestamps[0] - timestamps[1]).total_seconds()))
+    # time.sleep(50)
+    return int(abs(timestamps[0] - timestamps[1]).total_seconds())
 
 
-def get_simulation_timestamps(json_file_name, simulation_number):
-    li = [time.strftime("%Y-%m-%d_%H:%M:%S_")+]
+def get_simulation_timestamps(oldest_file_name, sim_number, time_format='%Y-%m-%d_%H:%M:%S'):
+    # file name is the oldest timestamp
+    for i in range(sim_number):
+        yield (i, (dt.datetime.strptime(oldest_file_name[:19], time_format) + dt.timedelta(seconds=i + 1))
+               .strftime(time_format) + oldest_file_name[19:])
 
-    print(json_file_name)
-    print(simulation_number)
-    return []
+
+def write_simulation(oldest_file_name, sim_number, sim_step, oldest_sub_count):
+    with open(oldest_file_name) as old_file:
+        json_template = json.load(old_file)
+    for counter, file_name in get_simulation_timestamps(oldest_file_name, sim_number):
+        json_template['total'] = oldest_sub_count + sim_step * counter
+        with open('./twitch_sim_dump/' + file_name, 'w+') as f:
+            json.dump(json_template, f)
+            print('done')
+            time.sleep(1)
+    pass
 
 
 def simulate_youtube():
     pass
 
 
-def simulate_twitch(json_file_names):
+def simulate_twitch(json_file_names):  # Make this call a padded call: def fun(*args)
+    # json_file_1 has the oldest timestamps (comes before in time than 2)
     simulation_number = number_of_simulations(json_file_names)
-    subs = []
-    for json_file in json_file_names:
+    subscriber_counts = []
+    for json_file in sorted(json_file_names):  # subs[0] has the oldest sub number
         # print(json_file)
         with open(json_file) as f:
             files = json.load(f)
-            subs.append(files.get('total', ''))
-
-    datetime.strptime('', '%b %d %Y %I:%M%p')
-
-    simulation_subs_step = int(abs(subs[0]-subs[1])/simulation_number)
-    simulation_timestamps = get_simulation_timestamps(json_file, simulation_number)
-    time.sleep(50)
-    for simulation in range(simulation_number):
-        files['total'] = subs[1]-simulation_subs_step
-        with open(json_file, 'w+') as f:
-            json.dump(files, f)
-        time.sleep(10)
+            subscriber_counts.append(files.get('total', ''))
+    simulation_subs_step = int(abs(subscriber_counts[0] - subscriber_counts[1]) / simulation_number)
+    write_simulation(sorted(json_file_names)[0], simulation_number, simulation_subs_step, subscriber_counts[0])
+    # simulation_subs_step = int(abs(subs[0]-subs[1])/simulation_number)
+    # for sim_name in get_simulation_timestamps(sorted(json_file_names)[0], simulation_number):
+    #
+    #     write_simulation(sim_name, sorted(json_file_names)[0])
 
 
 def simulate_twitter():
@@ -59,4 +66,4 @@ streamer_names = ['playbattlegrounds', 'lol']
 # this is very inefficient, surely there's a better way to do this
 for streamer_name in streamer_names:
     # print(streamer_name)
-    simulate_twitch(glob.glob('*_twitch_'+streamer_name+'.json'))
+    simulate_twitch(glob.glob('*_twitch_'+streamer_name+'.json'))  # make it an unpacking pass *glob....
