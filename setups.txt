@@ -5,4 +5,10 @@
 pip install python-kafka
 pip install cassandra-driver --user
 pip install boto3
+pip install pyspark
 
+# Spark
+
+All nodes need the same version of pyspark or things break.
+We also need to reroute $SPARK_HOME to the pyspark folder. Usually:
+SPARK_HOME=/home/ubuntu/.local/lib/python3.5/site-packages/pyspark/

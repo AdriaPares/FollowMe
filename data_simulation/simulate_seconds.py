@@ -5,6 +5,8 @@ import glob
 import time
 import datetime as dt
 
+# This needs to run on S3
+
 
 def number_of_simulations(json_file_names):
     timestamps = []
