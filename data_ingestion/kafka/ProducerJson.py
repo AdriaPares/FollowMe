@@ -12,9 +12,9 @@ json_content = json.loads(file_content)
 producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
                          value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
-producer.send('my-topic', value={'total_twitch_subs':json_content['total']})
+producer.send('my-topic', value={'total_twitch_subs': json_content['total']})
 
 for e in range(1000):
-    data = {'number' : e}
+    data = {'number': e}
     producer.send('my-topic', value=data)
     sleep(5)
