@@ -4,7 +4,7 @@ findspark.init()
 
 import os
 from pyspark.sql import SQLContext
-from pyspark import SparkContext
+from pyspark import SparkContext, SparkConf
 # noinspection PyUnresolvedReferences
 from pyspark.sql.functions import udf, StringType
 # noinspection PyUnresolvedReferences
@@ -12,10 +12,10 @@ from pyspark.sql.functions import mean as sql_mean
 
 # Unknown if this needs to run every time we call this...
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 ' \
-                                    '--conf spark.cassandra.connection.host=10.0.0.4,' \
-                                    '10.0.0.5,10.0.0.6,10.0.0.14 pyspark-shell'
+                                    '--conf spark.cassandra.connection.host=10.0.0.9,' \
+                                    '10.0.0.10,10.0.0.11,10.0.0.12 pyspark-shell'
 
-sc = SparkContext('local', 'cassandra_minute_to_hour')
+sc = SparkContext('spark://ip-10-0-0-7.ec2.internal:7077', 'cassandra_minute_to_hour')
 # Creating PySpark SQL Context
 
 sqlContext = SQLContext(sc)
@@ -45,3 +45,4 @@ minutes.write\
     .options(table='twitch_hour', keyspace='insight')\
     .save()
 
+sc.stop()
