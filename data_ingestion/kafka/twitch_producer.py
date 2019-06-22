@@ -12,9 +12,9 @@ json_content = json.loads(file_content)
 producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
                          value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
-producer.send('twitch_topic', value={'total_twitch_followers': json_content['total']})
+producer.send('twitch-topic', value={'total_twitch_followers': json_content['total']})
 # this needs a timestamp
-
+# and also a try/except for JSON DECODE ERROR (if the topic gets thrown bad stuff it will stop the consumer)
 
 print('Done')
 sleep(50)

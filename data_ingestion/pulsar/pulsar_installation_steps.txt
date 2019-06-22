@@ -1,0 +1,50 @@
+# We need at least 3 small instances with ZooKeeper and 3 for Pulsar. ZooKeeper instances can be very small,
+# we will use t3.small for ZooKeeper and r5.large for Pulsar. At least 50 GB on t3, 50 on r3
+
+# Most instructions will come from here: https://pulsar.apache.org/docs/v2.0.1-incubating/deployment/cluster/
+# with comments from this video: https://www.youtube.com/watch?v=pxfTcRPrRDs&feature=youtu.be
+
+# For convenience, Z denotes Zookeeper nodes and P the Pulsar Brokers
+
+# Install Java 8
+
+sudo apt-get update
+sudo apt install openjdk-8-jre -y
+
+# Download Pulsar and unzip on every node (Z + P)
+
+wget http://archive.apache.org/dist/incubator/pulsar/pulsar-2.0.0-rc1-incubating/apache-pulsar-2.0.0-rc1-incubating-bin.tar.gz
+tar xvzf apache-pulsar-2.0.0-rc1-incubating-bin.tar.gz
+cd apache-pulsar-2.0.0-rc1-incubating
+
+# Add the ZooKeeper server names to conf (Z + P)
+
+server.1=zk1.us-west.example.com:2888:3888
+server.2=zk2.us-west.example.com:2888:3888
+server.3=zk3.us-west.example.com:2888:3888
+
+# easier to do with echo:
+
+echo server.1=ec2-x-xx-xxx-xxxx.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
+echo server.2=ec2-x-xx-xxx-xxxx.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
+echo server.3=ec2-x-xx-xxx-xxxx.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
+
+# ZooKeeper ID (Only Z). We need to create a myid file with a unique integer to identify them.
+# [[[CHANGE THE NUMBER FOR EACH Z NODE]]]
+
+mkdir -p data/zookeeper
+echo 1 > data/zookeeper/myid
+
+mkdir -p data/zookeeper
+echo 2 > data/zookeeper/myid
+
+mkdir -p data/zookeeper
+echo 3 > data/zookeeper/myid
+
+# Initiate the ZooKeeper. Run this in one of the 3 Z nodes, it should start the whole Z cluster
+
+bin/pulsar-daemon start zookeeper
+
+# This doesn't always work, so do we'll check that it's working. Do this on every Z node:
+telnet localhost 2181
+stat

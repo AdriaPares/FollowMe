@@ -12,7 +12,7 @@ json_content = json.loads(file_content)
 producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
                          value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
-producer.send('twitter_topic', value={'total_twitter_followers': json_content['followers_count']})
+producer.send('twitter-topic', value={'total_twitter_followers': json_content['followers_count']})
 # this needs a timestamp
 
 

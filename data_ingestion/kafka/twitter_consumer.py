@@ -22,7 +22,7 @@ def insert(message):
 
 
 consumer = KafkaConsumer(
-        'twitter_topic',
+        'twitter-topic',
         bootstrap_servers=['localhost:9092'],
         auto_offset_reset='earliest',
         enable_auto_commit=True,

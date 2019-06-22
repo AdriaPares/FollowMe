@@ -22,7 +22,7 @@ def insert(message):
 
 
 consumer = KafkaConsumer(
-        'twitch_topic',
+        'twitch-topic',
         bootstrap_servers=['localhost:9092'],
         auto_offset_reset='earliest',
         enable_auto_commit=True,

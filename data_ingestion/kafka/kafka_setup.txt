@@ -1,0 +1,137 @@
+# Installing Kafka in 3 m5.large, 50 GiB gp2 EBS
+
+# First things first: ZooKeeper (https://codeforgeek.com/how-to-setup-zookeeper-cluster-for-kafka/)
+
+# You need a sec group to allow port 2181 at least
+# According to tutorial also range 2888:3888 (We skip it for now), but since inbound sec group is open we may not need this
+# since it's open so that they can communicate with each other
+
+sudo apt-get update
+
+# Get java:
+
+sudo apt install openjdk-8-jre -y
+
+# Download Kafka:
+
+wget http://apache.mirrors.tds.net/kafka/2.2.0/kafka_2.12-2.2.0.tgz
+
+sudo tar zxvf kafka_2.12-2.2.0.tgz -C /usr/local/
+sudo mv /usr/local/kafka_2.12-2.2.0 /usr/local/kafka
+# Create myid
+
+sudo mkdir /var/lib/zookeeper
+cd /var/lib/zookeeper
+sudo touch myid
+
+# Change this number accordingly. Each node must have a different one (1,2,3 for us)
+# If you can't, just vi into myid and write it
+
+sudo echo “1” >> myid
+
+# Configure ZooKeeper
+
+vi /usr/local/kafka/config/zookeeper.properties
+
+# Add the following for each server:
+# IPs are local: 10.0.0.XX
+# Notice the weird pattern of 2888:3888 in the original article, sometimes it's missing.
+# I do feel it's a typo though, I used 2888:3888 everywhere
+
+
+# Server 1
+dataDir=/var/lib/zookeeper
+clientPort=2181
+maxClientCnxns=0
+initLimit=5
+syncLimit=2
+tickTime=2000
+# list of servers
+server.1=0.0.0.0:2888:3888
+server.2=<Ip of second server>:2888:3888
+server.3=<ip of third server>:2888:3888
+
+# Server 2
+dataDir=/var/lib/zookeeper
+clientPort=2181
+maxClientCnxns=0
+initLimit=5
+syncLimit=2
+tickTime=2000
+# list of servers
+server.1=<ip of first server>:2888:3888
+server.2=0.0.0.0:2888:3888
+server.3=<ip of third server>:2888:3888
+
+# Server 3
+dataDir=/var/lib/zookeeper
+clientPort=2181
+maxClientCnxns=0
+initLimit=5
+syncLimit=2
+tickTime=2000
+# list of servers
+server.1=<ip of first server>:2888:3888
+server.2=<ip of second server>:2888:3888
+server.3=0.0.0.0:2888:3888
+
+# Launch ZooKeeper
+
+cd /usr/local/kafka
+sudo bin/zookeeper-server-start.sh config/zookeeper.properties
+# If this doesn't error, we are good. For silent calls, run
+
+sudo bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
+
+# Configure Kafka
+
+sudo vi /usr/local/kafka/config/server.properties
+
+# Fill it like this:
+
+#Server 1/2/3
+
+# The id of the broker. This must be set to a unique integer for each broker.
+
+broker.id=10/20/30... # Depending on the server you are on
+
+# A comma seperated list of directories under which to store log files
+log.dirs=/tmp/kafka-logs
+# advertised.host.name=<ip address of server> # New version has deprecated this, use advertised.listeners instead
+# log.dirs=/tmp/kafka-logs # This appears twice, not sure why...
+advertised.listeners=PLAINTEXT://<public_ip> # Public IP is needed for clients to connect. It can be private IP if everything
+# is inside the same subnet I think
+# add all 3 zookeeper instances ip here
+zookeeper.connect=<server1 ip>:2181,<server2 ip>:2181,<server3 ip>:2181 # Public IPs here as well
+# not sure if private would work as well
+zookeeper.connection.timeout.ms=6000
+
+# Initiate Kafka server [[BE SURE TO HAVE ZOOKEEPER SERVER ON ALREADY OR YOU WILL BE IN PAIN]]
+# -daemon is for Kafka to run in background and be silent
+# or you won't be able to do anything else (ctrl+c shuts the servers down)
+
+sudo /usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/server.properties
+
+# As an aside, it's normal if you get several 'Got user-level KeeperException when processing...'
+# You can check more here: https://stackoverflow.com/questions/43559328/got-user-level-keeperexception-when-processing
+# Essentially, some nodes don't exist yet when you start and ZooKeeper tells you, but it's pretty normal on initiation.
+
+# Check if Kafka is up: a very simple topic creation
+# Go to one node and do this:
+
+/usr/local/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 3 --partitions 2 --topic my-topic
+
+# You might get a UnknownTopicOrPartitionException: This server does not host this topic-partition.
+# This is normal-ish when electing a leader for partition, it's only log relevant, cluster is not affected
+# Check https://stackoverflow.com/questions/44514923/reproducing-unknowntopicorpartitionexception-this-server-does-not-host-this-top
+
+# We can test connections with:
+
+# Any Node
+/usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic my-topic
+
+# Any other node
+/usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic my-topic
+
+##### SUPER DUPER CAREFUL!!!!! If you try to run a json consumer on this topic it will explode, because you will have
+##### typed stuff not in json format (most likely) and you consumer will give JSON ENCODE ERROR or similar.
