@@ -1,0 +1,27 @@
+# Cassandra
+
+Some best practices:
+https://aws.amazon.com/blogs/big-data/best-practices-for-running-apache-cassandra-on-amazon-ec2/
+
+Deployments and configurations:
+http://cloudurable.com/blog/cassandra-aws-cpu-requirements/index.html
+
+A cool article on anti-patterns:
+https://www.datastax.com/dev/blog/how-not-to-benchmark-cassandra
+
+- Back-ups in S3.
+- Separate cluster in 3 availability zones to survive failure of one Availability Zone
+- Choosing Ec2MultiRegionSnitch for scalability from the beginning?
+- Separate volumes containing logs and data
+- EBS is not recommended for Cassandra storage if you do more than 100 IOPS (we do about 30k IOPS).
+
+- Improve fault-tolerance for read and write by changing queries (read/write) policy (one, two, quorum, all...)
+
+
+# Spark
+
+# Kafka
+
+# Pulsar
+
+# Airflow
