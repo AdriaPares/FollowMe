@@ -1,13 +1,44 @@
-#TODO Figure out a good way of installing Cassandra.
-#When everything is running, reinstall Cassandra and try to execute it without that much noise
-
-
-Change files:
-/etc/cassandra/cassandra.yaml
-/etc/cassandra/cassandra-rackdc.properties #not sure about this one...
-
-run cassandra cluster
+# run cassandra cluster $-Dcassandra.ignore might not be needed at all...
 sudo cassandra -R -Dcassandra.ignore_dc=true -Dcassandra.ignore_rack=true
 
-initiate calling cqlsh ip, for example
+# initiate calling cqlsh ip, for example
 cqlsh 10.0.0.4
+
+# Create Keyspace
+
+CREATE KEYSPACE insight
+WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3};
+
+use insight;
+
+# Create tables
+# Default_time_to_live determines how long a row will survive in the database before being deleted (in seconds)
+# For more info: https://docs.datastax.com/en/ddaccql/doc/cql/cql_reference/cql_commands/cqlCreateTable.html#cqlTableProperties__DefaultTTL
+# ALTER TABLE can modify this if you need to toy with it
+
+# Current ttl: live = 120 (2 min, 120 rows per person), minute = 7200 (2hours, 120 rows per person)
+# hour = 172800 (2days, 48 rows per person), day has no ttl (for now)
+
+# YouTube
+
+create table youtube_live (timestamp_name text primary key, subscriber_count int) with default_time_to_live = 120;
+create table youtube_minute (timestamp_name text primary key, subscriber_count int) with default_time_to_live = 7200;
+create table youtube_hour (timestamp_name text primary key, subscriber_count int) with default_time_to_live = 172800;
+create table youtube_day (timestamp_name text primary key, subscriber_count int) ;
+
+# Twitch
+
+create table twitch_live (timestamp_name text primary key, follower_count int) with default_time_to_live = 120;
+create table twitch_minute (timestamp_name text primary key, follower_count int) with default_time_to_live = 7200;
+create table twitch_hour (timestamp_name text primary key, follower_count int) with default_time_to_live = 172800;
+create table twitch_day (timestamp_name text primary key, follower_count int) ;
+
+# Twitter
+
+create table twitter_live (timestamp_name text primary key, follower_count int) with default_time_to_live = 120;
+create table twitter_minute (timestamp_name text primary key, follower_count int) with default_time_to_live = 7200;
+create table twitter_hour (timestamp_name text primary key, follower_count int) with default_time_to_live = 172800;
+create table twitter_day (timestamp_name text primary key, follower_count int) ;
+
+
+
