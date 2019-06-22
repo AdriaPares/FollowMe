@@ -1,0 +1,21 @@
+\ \      / /_ _ _ __ _ __ (_)_ __   __ _
+  \ \ /\ / / _` | '__| '_ \| | '_ \ / _` |
+   \ V  V / (_| | |  | | | | | | | | (_| |
+    \_/\_/ \__,_|_|  |_| |_|_|_| |_|\__, |
+                                    |___/
+# ABSOLUTELY DO NOT TRY TO UPDATE PYTHON 3 IN EC2, YOU ARE GOING TO HAVE A BAD TIME
+# IF YOU NEED A SPECIFIC VERSION OF PYTHON, SAVE YOURSELF THE HEADACHE AND SET
+# VIRTUAL ENVIRONMENTS
+
+# DO THIS AFTER SPARK_INSTALLATION_STEPS.TXT
+
+# Install pip3
+
+sudo apt install python3-pip -y
+
+# Install pyspark and findspark
+
+pip3 install pyspark
+pip3 install findspark --user
+
+# That's pretty much it, try running one of the pyspark scripts and see if that works.
