@@ -1,7 +1,10 @@
-# We need at least 3 small instances with ZooKeeper and 3 for Pulsar. ZooKeeper instances can be very small,
-# we will use t3.small for ZooKeeper and r5.large for Pulsar. At least 50 GB on t3, 50 on r3
+# We need at least 3 small instances with ZooKeeper and 3 for Pulsar. ZooKeeper instances can be very small according
+# to Pulsar, but t3.small kept getting trashed by Java. We switch to t3.large, or do m5.large if you get approved the
+# amplified storage
+# we will use t3.large for ZooKeeper and r5.large for Pulsar. At least 50 GB on t3, 50 on r3
 
-# Most instructions will come from here: https://pulsar.apache.org/docs/v2.0.1-incubating/deployment/cluster/
+# Most instructions will come from here:
+# https://pulsar.apache.org/docs/en/deploy-bare-metal/
 # with comments from this video: https://www.youtube.com/watch?v=pxfTcRPrRDs&feature=youtu.be
 
 # For convenience, Z denotes Zookeeper nodes and P the Pulsar Brokers
@@ -11,11 +14,18 @@
 sudo apt-get update
 sudo apt install openjdk-8-jre -y
 
-# Download Pulsar and unzip on every node (Z + P)
+## Download Pulsar and unzip on every node (Z + P)
 
-wget http://archive.apache.org/dist/incubator/pulsar/pulsar-2.0.0-rc1-incubating/apache-pulsar-2.0.0-rc1-incubating-bin.tar.gz
-tar xvzf apache-pulsar-2.0.0-rc1-incubating-bin.tar.gz
-cd apache-pulsar-2.0.0-rc1-incubating
+wget https://archive.apache.org/dist/pulsar/pulsar-2.3.2/apache-pulsar-2.3.2-bin.tar.gz
+tar xvzf apache-pulsar-2.3.2-bin.tar.gz
+cd apache-pulsar-2.3.2
+
+## Installing connectors (required for Cassandra!) only in P (I think). Do this once cd apache-pulsar-2.3.2 is done
+
+wget https://archive.apache.org/dist/pulsar/pulsar-2.3.2/connectors/pulsar-io-cassandra-2.3.2.nar
+mkdir connectors
+mv pulsar-io-cassandra-2.3.2.nar connectors
+
 
 # Add the ZooKeeper server names to conf (Z + P)
 
@@ -24,6 +34,10 @@ server.2=zk2.us-west.example.com:2888:3888
 server.3=zk3.us-west.example.com:2888:3888
 
 # easier to do with echo:
+
+echo server.1=ec2-18-214-198-48.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
+echo server.2=ec2-3-215-113-229.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
+echo server.3=ec2-3-218-203-5.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
 
 echo server.1=ec2-x-xx-xxx-xxxx.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
 echo server.2=ec2-x-xx-xxx-xxxx.compute-1.amazonaws.com:2888:3888 >> ./conf/zookeeper.conf
@@ -45,6 +59,163 @@ echo 3 > data/zookeeper/myid
 
 bin/pulsar-daemon start zookeeper
 
-# This doesn't always work, so do we'll check that it's working. Do this on every Z node:
+# This doesn't always work, so do we'll check that it's working. Do this on every Z node: (check the video for this)
 telnet localhost 2181
 stat
+
+# If we get no connection, try initiating each node on its own:
+
+bin/pulsar zookeeper
+
+# If you get a connection error because the port is already open, check the port:
+
+sudo lsof -i :2181
+
+# In our case, we got the following
+
+# COMMAND  PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+# java    6104 ubuntu  181u  IPv4  23902      0t0  TCP *:2181 (LISTEN)
+
+# Hence, we need to kill the process and try again:
+
+sudo kill -9 6104
+
+# Then we try again, and check connection (repeat steps basically):
+
+bin/pulsar-daemon start zookeeper
+
+# After the zoo is up, we run this on one of the Z nodes
+# [[[MAKE SURE THAT ZK IS RUNNING BEFORE THIS STEP OR IT'S A LOT OF WORK, ACTUALLY FASTER TO TERMINATE ZK AND START OVER]]]
+
+# cluster: name that we give the cluster (can be anything)
+# zookeeper: any Z node, doesn't matter which one
+# configuration-store: same as above, although it can be another node (KISS)
+# web-service-url: ip of one of the clusters
+# tls only if we are using tls (we aren't, so we don't run it
+# broker-service-url pulsar
+# broker-service-url-tls
+
+# Template:
+# bin/pulsar initialize-cluster-metadata \
+#   --cluster pulsar-cluster-1 \
+#   --zookeeper zk1.us-west.example.com:2181 \
+#   --configuration-store zk1.us-west.example.com:2181 \
+#   --web-service-url http://pulsar.us-west.example.com:8080 \
+#   --web-service-url-tls https://pulsar.us-west.example.com:8443 \
+#   --broker-service-url pulsar://pulsar.us-west.example.com:6650 \
+#   --broker-service-url-tls pulsar+ssl://pulsar.us-west.example.com:6651
+
+
+bin/pulsar initialize-cluster-metadata \
+  --cluster pulsar-cluster \
+  --zookeeper ec2-18-214-198-48.compute-1.amazonaws.com:2181 \
+  --configuration-store ec2-18-214-198-48.compute-1.amazonaws.com:2181 \
+  --web-service-url ec2-18-210-29-61.compute-1.amazonaws.com:8080 \
+  --broker-service-url pulsar://ec2-18-210-29-61.compute-1.amazonaws.com:6650
+
+# We get something like 'Cluster metadata for pulsar-cluster setup correctly'
+
+# At this point, we are not going to touch Z anymore, you can close the terminals for those nodes
+# Don't stop instances though
+
+
+## BookKeeper Cluster config
+
+# Open the file and add the zookeeper nodes' IPs. From the pulsar folder:
+
+vi /conf/bookkeeper.conf
+
+# Go to line 580, and change the zkServers line with a list of your Z nodes. In our case:
+
+ec2-18-214-198-48.compute-1.amazonaws.com:2181,ec2-3-215-113-229.compute-1.amazonaws.com:2181,ec2-3-218-203-5.compute-1.amazonaws.com:2181
+
+# Do this in all P nodes
+
+# Now, we start the bookie in each P node, then we test each node individually
+
+bin/pulsar-daemon start bookie
+bin/bookkeeper shell bookiesanity
+
+# Test should return something like Bookie sanity test succeeded.
+
+# Test the whole cluster, run this on any P node:
+
+bin/bookkeeper shell simpletest --ensemble 3 --writeQuorum 3 --ackQuorum 3 --numEntries 8
+
+# We should get something like (it's among the log retunrs) 8 entries written to ledger 3 (8 must be 8, 3 can be whatever)
+
+
+## Pulsar Brokers
+
+vi conf/broker.conf
+
+# line 23: zookeeperServers. Same as with BookKeeper bookies
+
+zookeeperServers=ec2-18-214-198-48.compute-1.amazonaws.com:2181,ec2-3-215-113-229.compute-1.amazonaws.com:2181,ec2-3-218-203-5.compute-1.amazonaws.com:2181
+
+# line 26: configurationStoreServers. Same as before
+
+configurationStoreServers==ec2-18-214-198-48.compute-1.amazonaws.com:2181,ec2-3-215-113-229.compute-1.amazonaws.com:2181,ec2-3-218-203-5.compute-1.amazonaws.com:2181
+
+# line 47: clusterName. The same name you gave the cluster when initiating Pulsar metadata:
+
+clusterName=pulsar-cluster
+
+# Enabling Pulsar Functions
+
+# line 607 in broker.conf
+functionsWorkerEnabled=true
+# in functions_worker.yaml, add
+pulsarFunctionsCluster=pulsar-cluster
+
+
+# Start Pulsar brokers. Do this on every P node:
+
+bin/pulsar-daemon start broker
+
+# Pulsar should be up and running
+
+
+# Connecting to the cluster
+
+# [[THIS BREAKS FUNCTIONS FOR WHATEVER REASON ON THE NODE YOU CONFIGURE TO BE THE SERVER. SUPER WEIRD]]
+# [[DON'T DO THIS FOR NOW...]]]
+# Set one of the P nodes to be the pulsar client. Remember which one!
+
+vi conf/client.conf
+
+webServiceUrl=ec2-18-210-29-61.compute-1.amazonaws.com:8080/
+brokerServiceUrl=pulsar://ec2-18-210-29-61.compute-1.amazonaws.com:6650/
+
+# The video doesn't add / at the end, but he never tries to connect to the Pulsar client, so we follow
+# official instructions here. If we find out that this is wrong at some point, come back and edit this
+# [[DON'T DO THIS FOR NOW...]]]
+
+
+# We publish ten messages:
+
+bin/pulsar-client produce persistent://public/default/test -n 10  -m "Hello, Pulsar"
+
+# Consume the messages:
+
+bin/pulsar-client consume persistent://public/default/test -n 100 -s "consumer-test" -t "Exclusive"
+
+## Testing functions [[THIS DOESN'T WORK FOR NOW, COME BACK WHEN WE FIX IT]]
+
+# Create function exclamation
+
+bin/pulsar-admin functions create \
+  --jar examples/api-examples.jar \
+  --classname org.apache.pulsar.functions.api.examples.ExclamationFunction \
+  --inputs persistent://public/default/exclamation-input \
+  --output persistent://public/default/exclamation-output \
+  --tenant public \
+  --namespace default \
+  --name exclamation
+
+# Trigger the function
+
+bin/pulsar-admin functions trigger --name exclamation --trigger-value "hello world"
+[[THIS DOESN'T WORK FOR NOW, COME BACK WHEN WE FIX IT]]
+
+[[APPARENTLY IT WORKS ON THE NOT PRIMARY NODE? VERY WEIRD...]]

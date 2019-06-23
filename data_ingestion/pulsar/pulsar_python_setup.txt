@@ -1,0 +1,58 @@
+# DO PULSAR_INSTALLATION_STEPS FIRST
+
+# install pip3 and pulsar-python, as well as the cassandra driver (this takes a minute or two)
+
+sudo apt install python3-pip -y
+pip3 install pulsar-client
+pip3 install cassandra-driver --user
+
+# Try the tutorials and see if they work
+
+# Once you have that going, time to connect into Cassandra.
+# We follow this for now (ignore the Docker stuff, we already have a Cassandra cluster
+# https://pulsar.apache.org/docs/en/io-quickstart/
+
+vi examples/cassandra-sink.yml
+
+# Add this: (not sure if :9042 is correct tho...)
+# keyspace: the keyspace to write
+# columnFamily: the table to write in (how do we manage different tables? one file for each?)
+# keyname: Primary Key of the Cassandra table
+# columnName: column where we are writing
+
+configs:
+    roots: "10.0.0.5:9042,10.0.0.7:9042,10.0.0.12:9042,10.0.0.19:9042"
+    keyspace: "insight"
+    columnFamily: "twitch_live"
+    keyname: "timestamp_name"
+    columnName: "follower_count"
+
+# Run a test:
+# sink-config-file looks like the file that specifies what kind of connection we are establishing, so perhaps
+# changing this let's us choose what table to write into
+
+bin/pulsar-admin sink create \
+    --tenant public \
+    --namespace default \
+    --name cassandra-test-sink \
+    --sink-type cassandra \
+    --sink-config-file examples/cassandra-sink.yml \
+    --inputs test_cassandra
+
+# Check sink info
+
+bin/pulsar-admin sink get \
+    --tenant public \
+    --namespace default \
+    --name cassandra-test-sink
+
+# Check sink status
+
+bin/pulsar-admin sink status \
+    --tenant public \
+    --namespace default \
+    --name cassandra-test-sink
+
+# Verify the Cassandra sink:
+
+for i in {0..9}; do bin/pulsar-client produce -m "key-$i" -n 1 test_cassandra; done
