@@ -85,5 +85,12 @@ nodetool status
 #
 
 
+# Also install python libraries for scripts
+
+sudo apt install python3-pip -y
+
+# This takes a while to set up, it's normal
+pip3 install cassandra-driver --user
+pip3 install numpy
 
 https://www.liquidweb.com/kb/install-cassandra-ubuntu-16-04-lts/
