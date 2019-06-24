@@ -93,3 +93,4 @@ with open('random_accounts.json') as f:
     for streamer_name, streamer_data in accounts_dict.items():
         generate_data(streamer_name, streamer_data)
         print(streamer_name + ' done.')
+cassandra_cluster.shutdown()
