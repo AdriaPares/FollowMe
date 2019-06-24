@@ -1,5 +1,6 @@
-# Takes a JSON file and outputs simulated JSON files
-# To be run in Cassandra cluster
+# Takes a JSON file and writes to Cassandra Cluster
+# Fills the day, hour, minute tables according to workflow.txt
+# To be run in Cassandra Cluster
 # DON'T RUN IN LOCAL
 
 import datetime as dt
@@ -10,7 +11,7 @@ from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 
 
-def generate_data(streamer, data, final_date=dt.datetime.today(), time_format='%Y-%m-%d'):
+def generate_data(streamer, data, final_date=dt.datetime.today(), mode='day', time_format='%Y-%m-%d'):
     for website, (creation_date, current_subscriber_count) in data.items():
         creation_datetime = dt.datetime.strptime(creation_date, time_format)
         try:
@@ -19,34 +20,19 @@ def generate_data(streamer, data, final_date=dt.datetime.today(), time_format='%
             final_datetime = final_date
         number_of_simulations = abs(creation_datetime - final_datetime).days
 
-        for day, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
-                                                                     current_subscriber_count):
-            write_to_cassandra(day, website, streamer, simulated_subscriber_count)
+        for timestamp, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
+                                                                           current_subscriber_count):
+
+            write_to_cassandra(timestamp, website, streamer, simulated_subscriber_count, mode)
 
 
-def write_to_cassandra(day, website, streamer, current_subscriber_count):
-    key = day + '_' + website + '_' + streamer
-    if website == 'twitch':
-        cassandra_session.execute(twitch_prepared, [key, current_subscriber_count])
-    elif website == 'twitter':
-        cassandra_session.execute(twitter_prepared, [key, current_subscriber_count])
-    elif website == 'youtube':
-        cassandra_session.execute(youtube_prepared, [key, current_subscriber_count])
+def write_to_cassandra(timestamp, website, streamer, current_subscriber_count, mode):
+    key = timestamp + '_' + website + '_' + streamer
+    cassandra_session.execute(cassandra_queries[website + '_' + mode], [key, current_subscriber_count])
 
 
-    #
-    # if website == 'twitch' or website == 'twitter':
-    #     query = 'insert into ' + website + '_day (timestamp_name, follower_count) values ('
-    # elif website == 'youtube':
-    #     query = 'insert into ' + website + '_day (timestamp_name, subscriber_count) values ('
-    # else:
-    #     query = ''
-    # query += day + '_' + website + '_' + streamer + ', ' + str(current_subscriber_count) + ');'
-    #
-    # cassandra_session.execute(query)
-
-
-def random_walk_generator(creation_datetime, number_of_simulations, current_subscriber_count, time_format='%Y-%m-%d'):
+def random_walk_generator(creation_datetime, number_of_simulations, current_subscriber_count,
+                          time_format='%Y-%m-%d', mode='day'):
     # we generate bounded random walk with an std of 1% of the max. We assume initial subscriber_count is 0
     random_steps = bounded_random_walk(number_of_simulations, 0, current_subscriber_count,
                                        current_subscriber_count * 0.01)
@@ -82,15 +68,55 @@ def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.i
     return trend_line + rand_deltas
 
 
+def get_queries():
+    queries = dict(
+        twitch_day=cassandra_session.prepare("insert into twitch_day "
+                                             "(timestamp_name, follower_count) values (?,?);"),
+        twitter_day=cassandra_session.prepare("insert into twitter_day "
+                                              "(timestamp_name, follower_count) values (?,?);"),
+        youtube_day=cassandra_session.prepare("insert into youtube_day "
+                                              "(timestamp_name, subscriber_count) values (?,?);"),
+
+        twitch_hour=cassandra_session.prepare("insert into twitch_hour "
+                                              "(timestamp_name, follower_count) values (?,?);"),
+        twitter_hour=cassandra_session.prepare("insert into twitter_hour "
+                                               "(timestamp_name, follower_count) values (?,?);"),
+        youtube_hour=cassandra_session.prepare("insert into youtube_hour "
+                                               "(timestamp_name, subscriber_count) values (?,?);"),
+
+        twitch_minute=cassandra_session.prepare("insert into twitch_minute "
+                                                "(timestamp_name, follower_count) values (?,?);"),
+        twitter_minute=cassandra_session.prepare("insert into twitter_minute "
+                                                 "(timestamp_name, follower_count) values (?,?);"),
+        youtube_minute=cassandra_session.prepare("insert into youtube_minute "
+                                                 "(timestamp_name, subscriber_count) values (?,?);"))
+    return queries
+
+
 cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
 cassandra_session = cassandra_cluster.connect('insight')
-twitch_prepared = cassandra_session.prepare("insert into twitch_day (timestamp_name, follower_count) values (?,?)");
-twitter_prepared = cassandra_session.prepare("insert into twitter_day (timestamp_name, follower_count) values (?,?)");
-youtube_prepared = cassandra_session.prepare("insert into youtube_day (timestamp_name, subscriber_count) values (?,?)");
+
+cassandra_queries = get_queries()
+
 
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
-    for streamer_name, streamer_data in accounts_dict.items():
-        generate_data(streamer_name, streamer_data)
-        print(streamer_name + ' done.')
+
+# Day generation
+for streamer_name, streamer_data in accounts_dict.items():
+    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today()-dt.timedelta(days=2))
+    print(streamer_name + ' days done.')
+
+# Hour generation
+for streamer_name, streamer_data in accounts_dict.items():
+    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today()-dt.timedelta(hours=2),
+                  time_format='%Y-%m-%d_%H')
+    print(streamer_name + ' hours done.')
+
+# Minute generation
+for streamer_name, streamer_data in accounts_dict.items():
+    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today(), time_format='%Y-%m-%d_%H-%M')
+    print(streamer_name + ' minutes done.')
+
+print('SIMULATION OVER')
 cassandra_cluster.shutdown()
