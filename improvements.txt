@@ -14,14 +14,24 @@ https://www.datastax.com/dev/blog/how-not-to-benchmark-cassandra
 - Choosing Ec2MultiRegionSnitch for scalability from the beginning?
 - Separate volumes containing logs and data
 - EBS is not recommended for Cassandra storage if you do more than 100 IOPS (we do about 30k IOPS).
-
 - Improve fault-tolerance for read and write by changing queries (read/write) policy (one, two, quorum, all...)
-
+- Add cluster addresses as a config file to be read by the scripts
 
 # Spark
+- Compact 9 files into a single file, modularize the functions
+- Is findspark.init() required?
+- Is Spark even required? Look into Cassandra batches.
+- c5.large workers are maybe too overpowered for our use case?
 
 # Kafka
 
 # Pulsar
 
 # Airflow
+
+# Python & Generic
+
+- Add try excepts to file reading
+- Call dictionaries with .get()
+- Add function comments
+- Refactor naming and positioning
