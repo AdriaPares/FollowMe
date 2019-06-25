@@ -3,47 +3,35 @@
 # DON'T RUN IN LOCAL
 
 import datetime as dt
-# import time
+import time
 import json
 import numpy as np
-from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
+import boto3
+# from cassandra.cluster import Cluster
 
 
-def generate_data(streamer, data, final_date=dt.datetime.today(), time_format='%Y-%m-%d'):
+def write_to_s3(timestamp, website, streamer, current_subscriber_count):
+    key = timestamp + '_' + website + '_' + streamer
+    with open(key + '.json', 'w+') as f:
+        json.dump({key: current_subscriber_count}, f)
+    # s3.put_object(Bucket=bucket_name, Key=key, Body=json.dump({streamer: current_subscriber_count}))
+    # s3.upload_file(key + '.json', bucket_name, key + '.json')
+
+
+def generate_data(streamer, data, time_format='%Y-%m-%d_%H-%M-%S',
+                  final_date=dt.datetime.today() + dt.timedelta(hours=1)):
+    try:
+        final_datetime = dt.datetime.strptime(final_date, time_format)
+    except TypeError:
+        final_datetime = final_date
     for website, (creation_date, current_subscriber_count) in data.items():
-        creation_datetime = dt.datetime.strptime(creation_date, time_format)
-        try:
-            final_datetime = dt.datetime.strptime(final_date, time_format)
-        except TypeError:
-            final_datetime = final_date
-        number_of_simulations = abs(creation_datetime - final_datetime).days
+        creation_datetime = dt.datetime.today()
 
-        for day, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
-                                                                     current_subscriber_count):
-            write_to_cassandra(day, website, streamer, simulated_subscriber_count)
+        number_of_simulations = int(abs(creation_datetime - final_datetime).total_seconds()//2)
 
-
-def write_to_cassandra(day, website, streamer, current_subscriber_count):
-    key = day + '_' + website + '_' + streamer
-    if website == 'twitch':
-        cassandra_session.execute(twitch_prepared, [key, current_subscriber_count])
-    elif website == 'twitter':
-        cassandra_session.execute(twitter_prepared, [key, current_subscriber_count])
-    elif website == 'youtube':
-        cassandra_session.execute(youtube_prepared, [key, current_subscriber_count])
-
-
-    #
-    # if website == 'twitch' or website == 'twitter':
-    #     query = 'insert into ' + website + '_day (timestamp_name, follower_count) values ('
-    # elif website == 'youtube':
-    #     query = 'insert into ' + website + '_day (timestamp_name, subscriber_count) values ('
-    # else:
-    #     query = ''
-    # query += day + '_' + website + '_' + streamer + ', ' + str(current_subscriber_count) + ');'
-    #
-    # cassandra_session.execute(query)
+        for timestamp, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
+                                                                           current_subscriber_count, time_format):
+            write_to_s3(timestamp, website, streamer, simulated_subscriber_count)
 
 
 def random_walk_generator(creation_datetime, number_of_simulations, current_subscriber_count, time_format='%Y-%m-%d'):
@@ -51,7 +39,7 @@ def random_walk_generator(creation_datetime, number_of_simulations, current_subs
     random_steps = bounded_random_walk(number_of_simulations, 0, current_subscriber_count,
                                        current_subscriber_count * 0.01)
     for i, simulated_subscriber_count in enumerate(random_steps):
-        yield (dt.datetime.strftime(creation_datetime + dt.timedelta(days=i), time_format),
+        yield (dt.datetime.strftime(creation_datetime + dt.timedelta(seconds=i), time_format),
                int(simulated_subscriber_count))
 
 
@@ -82,15 +70,15 @@ def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.i
     return trend_line + rand_deltas
 
 
-cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-cassandra_session = cassandra_cluster.connect('insight')
-twitch_prepared = cassandra_session.prepare("insert into twitch_day (timestamp_name, follower_count) values (?,?)");
-twitter_prepared = cassandra_session.prepare("insert into twitter_day (timestamp_name, follower_count) values (?,?)");
-youtube_prepared = cassandra_session.prepare("insert into youtube_day (timestamp_name, subscriber_count) values (?,?)");
+t = time.time()
+
+# s3 = boto3.client('s3')
+# bucket_name = 'insight-api-dumps'
 
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
-    for streamer_name, streamer_data in accounts_dict.items():
-        generate_data(streamer_name, streamer_data)
-        print(streamer_name + ' done.')
-cassandra_cluster.shutdown()
+for streamer_name, streamer_data in accounts_dict.items():
+    generate_data(streamer_name, streamer_data)
+    print(streamer_name + 'DONE.')
+print(time.time() - t)
+print('LIVE DATA DONE.')
