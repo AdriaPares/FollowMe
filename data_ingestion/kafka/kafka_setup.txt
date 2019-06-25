@@ -81,7 +81,7 @@ cd /usr/local/kafka
 sudo bin/zookeeper-server-start.sh config/zookeeper.properties
 # If this doesn't error, we are good. For silent calls, run
 
-sudo bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
+sudo /usr/local/kafka/bin/zookeeper-server-start.sh -daemon /usr/local/kafka/config/zookeeper.properties
 
 # Configure Kafka
 
@@ -135,3 +135,14 @@ sudo /usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/
 
 ##### SUPER DUPER CAREFUL!!!!! If you try to run a json consumer on this topic it will explode, because you will have
 ##### typed stuff not in json format (most likely) and you consumer will give JSON ENCODE ERROR or similar.
+
+# Useful Commands
+
+# Check list of topics
+
+/usr/local/kafka/bin/kafka-topics.sh --describe --bootstrap-server localhost:9092
+
+#### Consumer groups!!
+
+# We need to set consumer groups to get some semblance of distribution. Change on each node the conf/consumer.properties
+

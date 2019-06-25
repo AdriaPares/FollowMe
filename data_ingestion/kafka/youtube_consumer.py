@@ -6,7 +6,7 @@ import datetime
 import time
 from json import loads
 
-cluster = Cluster(['10.0.0.4', '10.0.0.5', '10.0.0.6', '10.0.0.14'])
+cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
 session = cluster.connect('')
 
 user_insert_stmt = session.prepare("insert into insight.youtube_live (timestamp_name, subscriber_count) values (?,?)");
@@ -26,7 +26,7 @@ consumer = KafkaConsumer(
         bootstrap_servers=['localhost:9092'],
         auto_offset_reset='earliest',
         enable_auto_commit=True,
-        group_id=None,
+        group_id='youtube-group',
         value_deserializer=lambda x: loads(x.decode('utf-8')))
 
 
