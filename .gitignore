@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 
-data_simulation/kafka/old_stuff/
+data_ingestion/kafka/old_stuff/
 dummy_batch_dump/
 api_keys.json
 *twitch_*.json
