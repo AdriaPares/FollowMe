@@ -13,7 +13,7 @@ import boto3
 def write_to_s3(timestamp, website, streamer, current_subscriber_count):
     key = timestamp + '_' + website + '_' + streamer
     with open(key + '.json', 'w+') as f:
-        json.dump({key: current_subscriber_count}, f)
+        json.dump({'total': current_subscriber_count}, f)
     # s3.put_object(Bucket=bucket_name, Key=key, Body=json.dump({streamer: current_subscriber_count}))
     # s3.upload_file(key + '.json', bucket_name, key + '.json')
 
