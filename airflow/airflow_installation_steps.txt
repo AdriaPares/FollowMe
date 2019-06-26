@@ -102,7 +102,7 @@ sudo pip3 install apache-airflow[rabbitmq]
 
 airflow initdb
 
-# Start webserver and connect to insance port 8080 to see if it's working.
+# Start webserver and connect to instance port 8080 to see if it's working.
 
 airflow webserver
 
