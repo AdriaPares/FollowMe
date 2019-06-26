@@ -26,14 +26,13 @@ def generate_data(streamer, data, final_date=dt.datetime.today(), time_format='%
             write_to_cassandra(day, website, streamer, simulated_subscriber_count)
 
 
-def write_to_cassandra(day, website, streamer, current_subscriber_count):
-    key = day + '_' + website + '_' + streamer
+def write_to_cassandra(timestamp, website, streamer, current_subscriber_count):
     if website == 'twitch':
-        cassandra_session.execute(twitch_prepared, [key, current_subscriber_count])
+        cassandra_session.execute(twitch_prep, [streamer, timestamp, current_subscriber_count])
     elif website == 'twitter':
-        cassandra_session.execute(twitter_prepared, [key, current_subscriber_count])
+        cassandra_session.execute(twitter_prep, [streamer, timestamp, current_subscriber_count])
     elif website == 'youtube':
-        cassandra_session.execute(youtube_prepared, [key, current_subscriber_count])
+        cassandra_session.execute(youtube_prep, [streamer, timestamp, current_subscriber_count])
 
 
 def random_walk_generator(creation_datetime, number_of_simulations, current_subscriber_count, time_format='%Y-%m-%d'):
@@ -75,9 +74,9 @@ def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.i
 cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
 cassandra_session = cassandra_cluster.connect('insight')
 
-twitch_prepared = cassandra_session.prepare("insert into twitch_day (timestamp_name, follower_count) values (?,?)");
-twitter_prepared = cassandra_session.prepare("insert into twitter_day (timestamp_name, follower_count) values (?,?)");
-youtube_prepared = cassandra_session.prepare("insert into youtube_day (timestamp_name, subscriber_count) values (?,?)");
+twitch_prep = cassandra_session.prepare("insert into twitch_day (streamer, timestamp, follower_count) values (?,?,?)");
+twitter_prep = cassandra_session.prepare("insert into twitter_day (streamer, timestamp, follower_count) values (?,?,?)");
+youtube_prep = cassandra_session.prepare("insert into youtube_day (streamer, timestamp, follower_count) values (?,?,?)");
 
 
 with open('random_accounts.json') as f:

@@ -77,9 +77,9 @@ t = time.time()
 
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
-i = 1
+j = 1
 for streamer_name, streamer_data in accounts_dict.items():
     generate_data(streamer_name, streamer_data)
-    print(streamer_name + ' ' + i + '  DONE.')
+    print(streamer_name + ' ' + str(j) + '  DONE.')
 print(time.time() - t)
 print('LIVE DATA DONE.')
