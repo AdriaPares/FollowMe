@@ -49,18 +49,18 @@ def hour_aggregator(timestamp_hour):
     return timestamp_hour[:10] + timestamp_hour[13:]
 
 
-def spark_aggregator(udf_aggregator, table_df, initial_value, new_value_alias,
-                     initial_key='timestamp_name', new_key_alias='timestamp_name'):
+def spark_aggregator(udf_agg, table_df, initial_value, new_value_alias, partition_key='streamer',
+                     clustering_key='timestamp', clustering_key_alias='timestamp'):
 
-    return table_df.groupBy(udf_aggregator(initial_key).alias(new_key_alias)) \
+    return table_df.groupBy(partition_key, udf_agg(clustering_key).alias(clustering_key_alias)) \
                    .agg(sql_mean(initial_value).alias(new_value_alias))
 
 
 job_name = 'youtube_hour_to_day'
 table_to_read = 'youtube_hour'
 table_to_write = 'youtube_day'
-value_name = 'subscriber_count'
-value_alias = 'subscriber_count'
+value_name = 'follower_count'
+value_alias = 'follower_count'
 
 initialize_environment()
 new_sql_context = create_sql_context(job_name)
