@@ -7,19 +7,22 @@ import time
 import json
 import numpy as np
 import boto3
+import os
 # from cassandra.cluster import Cluster
 
 
 def write_to_s3(timestamp, website, streamer, current_subscriber_count):
     key = timestamp + '_' + website + '_' + streamer
-    with open(key + '.json', 'w+') as f:
-        json.dump({'total': current_subscriber_count}, f)
+    with open('./simulation_dump/' + key + '.json', 'w+') as g:
+        json.dump({'total': current_subscriber_count}, g)
     # s3.put_object(Bucket=bucket_name, Key=key, Body=json.dump({streamer: current_subscriber_count}))
-    # s3.upload_file(key + '.json', bucket_name, key + '.json')
+    s3.upload_file('./simulation_dump/' + key + '.json', bucket_name, key + '.json')
+    os.remove('./simulation_dump/' + key + '.json')
 
 
 def generate_data(streamer, data, time_format='%Y-%m-%d_%H-%M-%S',
-                  final_date=dt.datetime.today() + dt.timedelta(hours=1)):
+                  # final_date=dt.datetime.today() + dt.timedelta(hours=1)):
+                  final_date=dt.datetime.today() + dt.timedelta(minutes=10)):
     try:
         final_datetime = dt.datetime.strptime(final_date, time_format)
     except TypeError:
@@ -71,9 +74,9 @@ def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.i
 
 
 t = time.time()
-
-# s3 = boto3.client('s3')
-# bucket_name = 'insight-api-dumps'
+t1 = time.time()
+s3 = boto3.client('s3')
+bucket_name = 'insight-api-dumps'
 
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
@@ -81,5 +84,7 @@ j = 1
 for streamer_name, streamer_data in accounts_dict.items():
     generate_data(streamer_name, streamer_data)
     print(streamer_name + ' ' + str(j) + '  DONE.')
+    print(time.time() - t1)
+    t1 = 0
 print(time.time() - t)
 print('LIVE DATA DONE.')
