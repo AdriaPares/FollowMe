@@ -9,7 +9,7 @@ pulsar_client = pulsar.Client('pulsar://localhost:6650')
 
 consumer = pulsar_client.subscribe('test_cassandra', 'my-subscription')
 
-user_insert_stmt = cass_session.prepare("insert into insight.twitch_live (timestamp_name, follower_count) values (?,?)");
+prepared_query = cass_session.prepare("insert into insight.twitch_live (streamer, timestamp, follower_count) values (?,?, ?)");
 
 print("After connecting to pulsar")
 
@@ -17,7 +17,7 @@ print("After connecting to pulsar")
 def insert(message):
     print(message)
     for key, value in message.items():
-        return cass_session.execute(user_insert_stmt, [key, value])
+        return cass_session.execute(prepared_query, [key, value])
 
 
 while True:
