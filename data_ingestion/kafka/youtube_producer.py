@@ -19,7 +19,7 @@ producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
                          value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
 folder_path = './simulated_data/'
-streamer_name = '_ninja'
+streamer_name = 'ninja'
 platform = 'youtube'
 initial_timestamp = '2019-06-25_13-21-33_'
 time_format = '%Y-%m-%d_%H-%M-%S_'
@@ -29,4 +29,4 @@ while True:
                                              dt.timedelta(seconds=second_counter), time_format)
     with open(folder_path + current_timestamp + platform + streamer_name + '.json') as f:
         json_content = json.load(f)
-    producer.send('youtube-topic', value={current_timestamp + platform + streamer_name: json_content['total']})
+    producer.send('youtube-topic', value={current_timestamp + streamer_name: json_content['total']})

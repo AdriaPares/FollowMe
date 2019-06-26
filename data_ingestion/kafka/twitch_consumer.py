@@ -1,7 +1,6 @@
 from kafka.client import KafkaClient
 from kafka.consumer import KafkaConsumer
 from cassandra.cluster import Cluster
-from cassandra.policies import DCAwareRoundRobinPolicy
 import datetime
 import time
 from json import loads
@@ -9,17 +8,14 @@ from json import loads
 cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
 session = cluster.connect('')
 
-user_insert_stmt = session.prepare("insert into insight.twitch_live (timestamp_name, follower_count) values (?,?)");
-
+prepared_query = session.prepare("insert into insight.twitch_live (streamer, timestamp, follower_count) values (?,?,?)");
 
 print("After connecting to kafka")
 
 
 def insert(consumed_message):
-    # print(consumed_message.value)
-    # time.sleep(1)
     for key, value in consumed_message.value.items():
-        return session.execute(user_insert_stmt, [key, value])
+        return session.execute(prepared_query, [key[:19], key[20:], value])
 
 
 consumer = KafkaConsumer(
