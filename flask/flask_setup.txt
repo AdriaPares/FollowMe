@@ -18,3 +18,9 @@ flask run --host=0.0.0.0
 
 # connect to web by IP:5000/cassandra_test
 # remember to open the corresponding port
+
+# Dash
+
+sudo apt-get install libssl-dev
+pip3 install dash
+pip3 install dash-daq
