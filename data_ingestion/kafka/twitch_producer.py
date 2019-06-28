@@ -32,7 +32,7 @@ while True:
 
     # Add a try/except here if the S3 file doesn't exist
     for streamer_name in streamer_names.keys():
-        content_object = s3.Object('insight-api-dumps', current_file_timestamp + platform + streamer_name + '.json')
+        content_object = s3.Object('insight-api-dumps', current_file_timestamp + platform + '_' + streamer_name + '.json')
         file_content = content_object.get()['Body'].read().decode('utf-8')
         json_content = json.loads(file_content)
         producer.send(platform+'-topic', value={current_producer_timestamp + streamer_name: json_content['total']})
