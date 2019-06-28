@@ -26,15 +26,15 @@ consumer = KafkaConsumer(
         group_id='twitch-group',
         value_deserializer=lambda x: loads(x.decode('utf-8')))
 
-counter = 0
-t = time.time()
+# counter = 0
+# t = time.time()
 
 for message in consumer:
     insert(message)
-    counter += 1
-    if counter % 1000 == 0:
-        print('done')
-        print(counter, ' events')
-        print(time.time() - t)
-        t = time.time()
+    # counter += 1
+    # if counter % 1000 == 0:
+    #     print('done')
+    #     print(counter, ' events')
+    #     print(time.time() - t)
+    #     t = time.time()
 
