@@ -3,50 +3,33 @@ from cassandra.cluster import Cluster
 cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
 cassandra_session = cassandra_cluster.connect('')
 
+create_table_query = 'create table if not exists insight.'
+create_ledger_columns = '(streamer text, timestamp text, follower_count int, primary key (streamer, timestamp)) '
+create_trend_columns = '(streamer text, timestamp text, intraday_trend int, primary key (streamer, timestamp)) '
+create_trend_columns = '(category text, timestamp text, follower_count int, primary key (category, timestamp)) '
+platforms = ['twitch', 'twitter', 'youtube']
+time_frames = {'_live ': 'with default_time_to_live=120;',
+               '_minute ': 'with default_time_to_live=7200;',
+               '_hour ': 'with default_time_to_live=172800;',
+               '_day ': ';'}
 
-def create_table_queries():
-    queries = dict(create_youtube_live="create table if not exists insight.youtube_live "
-                                       "(timestamp_name text primary key, subscriber_count int) "
-                                       "with default_time_to_live=120;",
-                   create_youtube_minute="create table if not exists insight.youtube_minute "
-                                         "(timestamp_name text primary key, subscriber_count int) "
-                                         "with default_time_to_live=7200;",
-                   create_youtube_hour="create table if not exists insight.youtube_hour "
-                                       "(timestamp_name text primary key, subscriber_count int) "
-                                       "with default_time_to_live=172800;",
-                   create_youtube_day="create table if not exists insight.youtube_day "
-                                      "(timestamp_name text primary key, subscriber_count int) ;",
-
-
-                   create_twitch_live="create table if not exists insight.twitch_live "
-                                      "(timestamp_name text primary key, follower_count int) "
-                                      "with default_time_to_live=120;",
-                   create_twitch_minute="create table if not exists insight.twitch_minute "
-                                        "(timestamp_name text primary key, follower_count int) "
-                                        "with default_time_to_live=7200;",
-                   create_twitch_hour="create table if not exists insight.twitch_hour "
-                                      "(timestamp_name text primary key, follower_count int) "
-                                      "with default_time_to_live=172800;",
-                   create_twitch_day="create table if not exists insight.twitch_day "
-                                     "(timestamp_name text primary key, follower_count int) ;",
-
-
-                   create_twitter_live="create table if not exists insight.twitter_live "
-                                       "(timestamp_name text primary key, follower_count int) "
-                                       "with default_time_to_live = 120;",
-                   create_twitter_minute="create table if not exists insight.twitter_minute "
-                                         "(timestamp_name text primary key, follower_count int) "
-                                         "with default_time_to_live = 7200;",
-                   create_twitter_hour="create table if not exists insight.twitter_hour "
-                                       "(timestamp_name text primary key, follower_count int) "
-                                       "with default_time_to_live = 172800;",
-                   create_twitter_day="create table if not exists insight.twitter_day "
-                                      "(timestamp_name text primary key, follower_count int) ;")
-    return queries
-
-
+# Create Keyspace
 cassandra_session.execute("CREATE KEYSPACE IF NOT EXISTS insight "
                           "WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3};")
-for query_name, query in create_table_queries().items():
-    cassandra_session.execute(query)
+
+for platform in platforms:
+    # Create Trend tables
+    cassandra_session.execute(create_table_query + platform + '_trend ' + create_trend_columns)
+    for time, time_to_live in time_frames.items():
+        # Create Record tables
+        cassandra_session.execute(create_table_query + platform + time + create_ledger_columns + time_to_live)
+
+# Create Account metadata tables
+
+# Accounts
+cassandra_session.execute('create table if not exists insight.accounts (streamer text primary key, '
+                          'language text, game text, genre text);')
+# Games
+cassandra_session.execute('create table if not exists insight.games (game text primary key, genre text);')
+
 cassandra_cluster.shutdown()
