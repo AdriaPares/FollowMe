@@ -12,7 +12,7 @@ games_prep = cassandra_session.prepare("insert into games (game, genre, console)
 with open('games_info.json') as f:
     games = json.load(f)
 
-for game, attributes in games:
+for game, attributes in games.items():
     cassandra_session.execute(games_prep, [game, attributes['genre'], attributes['console']])
 print('GAMES DONE.')
 cassandra_cluster.shutdown()

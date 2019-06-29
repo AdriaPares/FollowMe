@@ -13,7 +13,7 @@ games_prep = cassandra_session.prepare("insert into accounts (streamer, language
 with open('random_accounts.json') as f:
     accounts = json.load(f)
 
-for streamer, attributes in accounts:
+for streamer, attributes in accounts.items():
     cassandra_session.execute(games_prep, [streamer, attributes['language'], attributes['game']])
-print('GAMES DONE.')
+print('ACCOUNTS DONE.')
 cassandra_cluster.shutdown()
