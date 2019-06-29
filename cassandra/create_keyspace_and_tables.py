@@ -5,8 +5,7 @@ cassandra_session = cassandra_cluster.connect('')
 
 create_table_query = 'create table if not exists insight.'
 create_ledger_columns = '(streamer text, timestamp text, follower_count int, primary key (streamer, timestamp)) '
-create_trend_columns = '(streamer text, timestamp text, intraday_trend int, primary key (streamer, timestamp)) '
-create_trend_columns = '(category text, timestamp text, follower_count int, primary key (category, timestamp)) '
+create_trend_columns = '(streamer text, timestamp text, trend int, primary key (streamer, timestamp)) '
 platforms = ['twitch', 'twitter', 'youtube']
 time_frames = {'_live ': 'with default_time_to_live=120;',
                '_minute ': 'with default_time_to_live=7200;',
@@ -28,8 +27,18 @@ for platform in platforms:
 
 # Accounts
 cassandra_session.execute('create table if not exists insight.accounts (streamer text primary key, '
-                          'language text, game text, genre text);')
+                          'language text, game text);')
 # Games
-cassandra_session.execute('create table if not exists insight.games (game text primary key, genre text);')
+cassandra_session.execute('create table if not exists insight.games (game text primary key, genre text, console text);')
+
+# Aggregations
+cassandra_session.execute('create table if not exists insight.language_aggregation '
+                          '(language text, timestamp text, total_count int, primary key (language, timestamp)')
+cassandra_session.execute('create table if not exists insight.game_aggregation '
+                          '(game text, timestamp text, total_count int, primary key (language, timestamp)')
+cassandra_session.execute('create table if not exists insight.genre_aggregation '
+                          '(genre text, timestamp text, total_count int, primary key (language, timestamp)')
+cassandra_session.execute('create table if not exists insight.console_aggregation '
+                          '(console text, timestamp text, total_count int, primary key (language, timestamp)')
 
 cassandra_cluster.shutdown()
