@@ -33,12 +33,12 @@ cassandra_session.execute('create table if not exists insight.games (game text p
 
 # Aggregations
 cassandra_session.execute('create table if not exists insight.language_aggregation '
-                          '(language text, timestamp text, total_count int, primary key (language, timestamp)')
+                          '(language text, timestamp text, total_count int, primary key (language, timestamp));')
 cassandra_session.execute('create table if not exists insight.game_aggregation '
-                          '(game text, timestamp text, total_count int, primary key (language, timestamp)')
+                          '(game text, timestamp text, total_count int, primary key (game, timestamp));')
 cassandra_session.execute('create table if not exists insight.genre_aggregation '
-                          '(genre text, timestamp text, total_count int, primary key (language, timestamp)')
+                          '(genre text, timestamp text, total_count int, primary key (genre, timestamp));')
 cassandra_session.execute('create table if not exists insight.console_aggregation '
-                          '(console text, timestamp text, total_count int, primary key (language, timestamp)')
+                          '(console text, timestamp text, total_count int, primary key (console, timestamp));')
 
 cassandra_cluster.shutdown()
