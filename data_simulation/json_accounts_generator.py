@@ -26,12 +26,14 @@ def get_subscriber_count(min_count, max_count):
 def account_generator(min_count, max_count, min_date='2019-01-01', max_date='2019-05-30'):
     random_creation_date = get_creation_date(min_date, max_date)
     random_sub_count = get_subscriber_count(min_count, max_count)
-    acc_dict = {'youtube': [random_creation_date[0], random_sub_count[0]],
-                'twitch': [random_creation_date[1], random_sub_count[1]],
-                'twitter': [random_creation_date[2], random_sub_count[2]],
-                'game': random.choice(games),
-                'language': random.choice(languages),
-                }
+    acc_dict = {'platform_data': {
+        'youtube': [random_creation_date[0], random_sub_count[0]],
+        'twitch': [random_creation_date[1], random_sub_count[1]],
+        'twitter': [random_creation_date[2], random_sub_count[2]]
+    },
+        'game': random.choice(games),
+        'language': random.choice(languages)
+    }
     return acc_dict
 
 

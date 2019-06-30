@@ -82,7 +82,7 @@ youtube_prep = cassandra_session.prepare("insert into youtube_minute (streamer, 
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
 for streamer_name, streamer_data in accounts_dict.items():
-    generate_data(streamer_name, streamer_data)
+    generate_data(streamer_name, streamer_data['platform_data'])
 print('MINUTES DONE.')
 
 cassandra_cluster.shutdown()

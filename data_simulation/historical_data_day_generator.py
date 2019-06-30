@@ -12,6 +12,9 @@ from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 
 
+# REFACTORING:
+# write: dictionary of prep queries, call by name and simplify to one (take out elif)
+
 def generate_data(streamer, data, final_date=dt.datetime.today(), time_format='%Y-%m-%d'):
     for website, (creation_date, current_subscriber_count) in data.items():
         creation_datetime = dt.datetime.strptime(creation_date, time_format)
@@ -82,6 +85,6 @@ youtube_prep = cassandra_session.prepare("insert into youtube_day (streamer, tim
 with open('random_accounts.json') as f:
     accounts_dict = json.load(f)
 for streamer_name, streamer_data in accounts_dict.items():
-    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today() - dt.timedelta(days=2))
+    generate_data(streamer_name, streamer_data['platform_data'], final_date=dt.datetime.today() - dt.timedelta(days=2))
 print('DAYS DONE.')
 cassandra_cluster.shutdown()
