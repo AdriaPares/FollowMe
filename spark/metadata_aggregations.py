@@ -64,12 +64,12 @@ sql_context = create_sql_context(job_name)
 #######
 # Fix this: it should start with an empty dataframe and run over all tables doing unions
 
-platform_union = load_and_get_table_df(sql_context, tables_to_read[0])
-platform_union = platform_union.union(load_and_get_table_df(sql_context, tables_to_read[1]))
-platform_union = platform_union.union(load_and_get_table_df(sql_context, tables_to_read[2]))
-
-platform_union = platform_union.groupBy(table_partition_key, table_clustering_key)\
+platform_union = load_and_get_table_df(sql_context, tables_to_read[0])\
+    .union(load_and_get_table_df(sql_context, tables_to_read[1]))\
+    .union(load_and_get_table_df(sql_context, tables_to_read[2]))\
+    .groupBy(table_partition_key, table_clustering_key)\
     .agg(sql_sum(value_to_read).alias(value_to_read_alias))
+
 
 #######
 
