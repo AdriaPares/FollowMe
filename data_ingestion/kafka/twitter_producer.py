@@ -17,7 +17,7 @@ s3 = boto3.resource('s3')
 with open('random_accounts.json') as f:
     streamer_names = json.load(f)
 
-platform = 'twitch'
+platform = 'twitter'
 initial_file_timestamp = '2000-01-01_00-00-00_'
 time_format = '%Y-%m-%d_%H-%M-%S_'
 initial_producer_timestamp = dt.datetime.now().strftime(time_format)
