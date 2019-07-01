@@ -19,6 +19,10 @@ cassandra_session.execute("CREATE KEYSPACE IF NOT EXISTS insight "
 for platform in platforms:
     # Create Trend tables
     cassandra_session.execute(create_table_query + platform + '_trend ' + create_trend_columns)
+
+    # Create temporal daily tables
+    cassandra_session.execute(create_table_query + platform + '_day_temp_table ' +
+                              create_ledger_columns + time_frames['_hour'])
     for time, time_to_live in time_frames.items():
         # Create Record tables
         cassandra_session.execute(create_table_query + platform + time + create_ledger_columns + time_to_live)
