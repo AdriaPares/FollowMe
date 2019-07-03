@@ -31,7 +31,7 @@ for platform in platforms:
         # Create Record tables
         # cassandra_session.execute(create_table_query + platform + time + create_ledger_columns_flask + time_to_live)
         cassandra_session.execute(create_table_query + platform + time + create_ledger_columns_flask + ' ;')
-        cassandra_session.execute(create_table_query + platform + time + create_ledger_columns_spark + ' ;')
+        cassandra_session.execute(create_table_query + platform + time + '_spark ' + create_ledger_columns_spark + ' ;')
 
 # Create Account metadata tables
 
