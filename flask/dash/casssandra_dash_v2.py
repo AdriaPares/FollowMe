@@ -41,8 +41,8 @@ app.layout = html.Div([
             value=3,
             marks=time_frames,
             step=None
-    )
-    ])
+         )
+    ], )
 ])
 
 
@@ -92,9 +92,11 @@ def update_graph_scatter(n, user, time_frame):
         traces.append(go.Scatter(
             x=x_data[i],
             y=y_data[i],
-            mode='lines+markers',
+            mode='lines',
             line=dict(color=colors[i], width=line_size[i]),
             marker=dict(color=colors[i], size=mode_size[i]),
+            text=labels[i],
+            name='',
             connectgaps=True,
         ))
 
@@ -116,10 +118,10 @@ def update_graph_scatter(n, user, time_frame):
             ),
         ),
         yaxis=dict(
-            showgrid=False,
+            showgrid=True,
             zeroline=False,
-            showline=False,
-            showticklabels=False,
+            showline=True,
+            showticklabels=True,
         ),
         autosize=False,
         margin=dict(
@@ -136,12 +138,12 @@ def update_graph_scatter(n, user, time_frame):
     # Adding labels
     for y_trace, label, color in zip(y_data, labels, colors):
         # labeling the left_side of the plot
-        annotations.append(dict(xref='paper', x=0.05, y=y_trace.iloc[0],
-                                xanchor='right', yanchor='middle',
-                                text=label + ' {:,}'.format(y_trace.iloc[0]),
-                                font=dict(family='Arial',
-                                          size=16),
-                                showarrow=False))
+        # annotations.append(dict(xref='paper', x=0.05, y=y_trace.iloc[0],
+        #                         xanchor='right', yanchor='middle',
+        #                         text=label + ' {:,}'.format(y_trace.iloc[0]),
+        #                         font=dict(family='Arial',
+        #                                   size=16),
+        #                         showarrow=False))
         # labeling the right_side of the plot
         annotations.append(dict(xref='paper', x=0.95, y=y_trace.iloc[-1],
                                 xanchor='left', yanchor='middle',
