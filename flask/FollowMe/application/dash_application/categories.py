@@ -20,6 +20,7 @@ import datetime
 import time
 from json import loads
 import dash_bootstrap_components as dbc
+import dash_table
 
 
 def Add_Dash(server):
@@ -46,7 +47,8 @@ def Add_Dash(server):
     session = cluster.connect()
     session.set_keyspace('insight')
 
-    prepared_query_games = session.prepare("select timestamp, follower_count from youtube_day "
+    day = '2019-01-01'
+    prepared_query_games = session.prepare("select follower_count from youtube_day "
                                            "where streamer=?");
     prepared_query_genre = session.prepare("select timestamp, follower_count from twitter_day "
                                            "where streamer=?");
@@ -57,8 +59,11 @@ def Add_Dash(server):
 
     # Create Dash Layout comprised of Graphs
 
+    data = []
+    columns = []
+
     dash_app.layout = html.Div(
-        children=get_followers(),
+        children=get_categories(data, columns),
         id='dash-container'
       )
 
@@ -74,70 +79,39 @@ def Add_Dash(server):
     return dash_app.server
 
 
-def get_followers():
-    """Plots 4 graphs with live, minute, hour and daily follower counts"""
+def get_categories(data, columns):
+    """Creates table with ranking by categories"""
     layout = html.Div([
         dbc.Row(
             dbc.Col(
                 html.Div([
                     dcc.Dropdown(
-                        id='user',
-                        options=[{'label': 'elded', 'value': 'elded'}],
-                        value='elded'
+                        id='category',
+                        options=[
+                            {'label': 'game', 'value': 'game'},
+                            {'label': 'genre', 'value': 'genre'},
+                            {'label': 'console', 'value': 'console'},
+                            {'label': 'language', 'value': 'language'}
+                        ],
+                        value='game'
                     )
                 ]#, style={'display': 'block', 'float': 'center'}
                 )
             )
         ),
-        dbc.Row([
+        dbc.Row(
             dbc.Col(
                 html.Div([
-                    dcc.Graph(id='live-graph', animate=True),
-                    dcc.Interval(
-                        id='live-update',
-                        interval=1000,
-                        n_intervals=0
+                    dash_table.DataTable(
+                        id='table',
+                        columns=columns,
+                        data=data,
                     )
-                ]#, style={'display': 'block'}
-                )),
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='minute-graph', animate=True),
-                    dcc.Interval(
-                        id='minute-update',
-                        interval=1000 * 60,
-                        n_intervals=0
-                    )
-                ]  # , style={'display': 'block'}
-                )
+                ])
             )
-        ], style={'columnCount': 2}),
-        dbc.Row([
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='hour-graph', animate=True),
-                    dcc.Interval(
-                        id='hour-update',
-                        interval=1000*60*60,
-                        n_intervals=0
-                    )
-                ]#, style={'display': 'block'}
-                )
-            ),
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='day-graph', animate=True),
-                    dcc.Interval(
-                        id='day-update',
-                        interval=1000*60*60*24,
-                        n_intervals=0
-                    )
-                ]# , style={'display': 'block'}
-                )
-            )
-        ], style={'columnCount': 2})
-    ]#, style={'columnCount': 2}
-    )
+        )
+    #, style={'columnCount': 2}
+    ])
     return layout
 
 
@@ -499,37 +473,3 @@ def init_callbacks(dash_app, session, x_name, y_name,
 
         layout['annotations'] = annotations
         return {'data': traces, 'layout': layout}
-
-
-# if __name__ == '__main__':
-#     x_name = 'timestamp'
-#     y_name = 'follower_count'
-#     cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-#     session = cluster.connect()
-#     session.set_keyspace('insight')
-#     prepared_query_youtube_day = session.prepare("select timestamp, follower_count from youtube_day "
-#                                                  "where streamer=?");
-#     prepared_query_twitter_day = session.prepare("select timestamp, follower_count from twitter_day "
-#                                                  "where streamer=?");
-#     prepared_query_twitch_day = session.prepare("select timestamp, follower_count from twitch_day "
-#                                                 "where streamer=?");
-#     prepared_query_youtube_hour = session.prepare("select timestamp, follower_count from youtube_hour "
-#                                                   "where streamer=?");
-#     prepared_query_twitter_hour = session.prepare("select timestamp, follower_count from twitter_hour "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_hour = session.prepare("select timestamp, follower_count from twitch_hour "
-#                                                  "where streamer=?");
-#     prepared_query_youtube_minute = session.prepare("select timestamp, follower_count from youtube_minute "
-#                                                     "where streamer=?");
-#     prepared_query_twitter_minute = session.prepare("select timestamp, follower_count from twitter_minute "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_minute = session.prepare("select timestamp, follower_count from twitch_minute "
-#                                                  "where streamer=?");
-#     prepared_query_youtube_live = session.prepare("select timestamp, follower_count from youtube_live "
-#                                                   "where streamer=?");
-#     prepared_query_twitter_live = session.prepare("select timestamp, follower_count from twitter_live "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_live = session.prepare("select timestamp, follower_count from twitch_live "
-#                                                  "where streamer=?");
-#     app.run_server(debug=True, host='0.0.0.0', port=5000)
-

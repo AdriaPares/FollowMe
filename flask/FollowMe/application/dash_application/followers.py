@@ -61,20 +61,30 @@ def Add_Dash(server):
     prepared_query_youtube_minute = session.prepare("select timestamp, follower_count from youtube_minute "
                                                     "where streamer=?");
     prepared_query_twitter_minute = session.prepare("select timestamp, follower_count from twitter_minute "
-                                                  "where streamer=?");
+                                                    "where streamer=?");
     prepared_query_twitch_minute = session.prepare("select timestamp, follower_count from twitch_minute "
-                                                 "where streamer=?");
+                                                   "where streamer=?");
     prepared_query_youtube_live = session.prepare("select timestamp, follower_count from youtube_live "
                                                   "where streamer=?");
     prepared_query_twitter_live = session.prepare("select timestamp, follower_count from twitter_live "
                                                   "where streamer=?");
     prepared_query_twitch_live = session.prepare("select timestamp, follower_count from twitch_live "
                                                  "where streamer=?");
+    prepared_query_accounts = session.prepare("select streamer from insight.accounts;")
+
+    # Get streamers names, and prepare the dropdown options
+    session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
+    session.default_fetch_size = 100000
+
+    streamers = session.execute(prepared_query_accounts)._current_rows
+    # print(streamers)
+
+    dropdown_options = [{'label': streamer, 'value': streamer} for streamer in streamers.streamer]
+    # print(dropdown_options)
 
     # Create Dash Layout comprised of Graphs
-
     dash_app.layout = html.Div(
-        children=get_followers(),
+        children=get_followers(dropdown_options),
         id='dash-container'
       )
 
@@ -90,44 +100,21 @@ def Add_Dash(server):
     return dash_app.server
 
 
-def get_followers():
-    """Plots 4 graphs with live, minute, hour and daily follower counts"""
+def get_followers(dropdown_options):
+    """Plots 4 charts with live, minute, hour and daily follower counts"""
     layout = html.Div([
         dbc.Row(
             dbc.Col(
                 html.Div([
                     dcc.Dropdown(
                         id='user',
-                        options=[{'label': 'elded', 'value': 'elded'}],
-                        value='elded'
+                        options=dropdown_options,
+                        value='ninja'
                     )
                 ]#, style={'display': 'block', 'float': 'center'}
                 )
             )
         ),
-        dbc.Row([
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='live-graph', animate=True),
-                    dcc.Interval(
-                        id='live-update',
-                        interval=1000,
-                        n_intervals=0
-                    )
-                ]#, style={'display': 'block'}
-                )),
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='minute-graph', animate=True),
-                    dcc.Interval(
-                        id='minute-update',
-                        interval=1000 * 60,
-                        n_intervals=0
-                    )
-                ]  # , style={'display': 'block'}
-                )
-            )
-        ], style={'columnCount': 2}),
         dbc.Row([
             dbc.Col(
                 html.Div([
@@ -149,6 +136,29 @@ def get_followers():
                         n_intervals=0
                     )
                 ]# , style={'display': 'block'}
+                )
+            )
+        ], style={'columnCount': 2}),
+        dbc.Row([
+            dbc.Col(
+                html.Div([
+                    dcc.Graph(id='live-graph', animate=True),
+                    dcc.Interval(
+                        id='live-update',
+                        interval=1000,
+                        n_intervals=0
+                    )
+                ]  # , style={'display': 'block'}
+                )),
+            dbc.Col(
+                html.Div([
+                    dcc.Graph(id='minute-graph', animate=True),
+                    dcc.Interval(
+                        id='minute-update',
+                        interval=1000 * 60,
+                        n_intervals=0
+                    )
+                ]  # , style={'display': 'block'}
                 )
             )
         ], style={'columnCount': 2})
@@ -246,7 +256,8 @@ def init_callbacks(dash_app, session, x_name, y_name,
         # Title
         annotations = [dict(xref='paper', yref='paper', x=0.0, y=1.05,
                             xanchor='left', yanchor='bottom',
-                            text=user + ' Social Media Live',
+                            # text=user + ' Social Media Live',
+                            text='Social Media Live',
                             font=dict(family='Arial',
                                       size=30,
                                       color='rgb(37,37,37)'),
@@ -333,7 +344,8 @@ def init_callbacks(dash_app, session, x_name, y_name,
         # Title
         annotations =[dict(xref='paper', yref='paper', x=0.0, y=1.05,
                            xanchor='left', yanchor='bottom',
-                           text=user + ' Social Media by Minute',
+                           # text=user + ' Social Media by Minute',
+                           text='Social Media by Minute',
                            font=dict(family='Arial',
                                      size=30,
                                      color='rgb(37,37,37)'),
@@ -420,7 +432,8 @@ def init_callbacks(dash_app, session, x_name, y_name,
         # Title
         annotations = [dict(xref='paper', yref='paper', x=0.0, y=1.05,
                             xanchor='left', yanchor='bottom',
-                            text=user + ' Social Media by Hour',
+                            # text=user + ' Social Media by Hour',
+                            text='Social Media by Hour',
                             font=dict(family='Arial',
                                       size=30,
                                       color='rgb(37,37,37)'),
@@ -507,7 +520,8 @@ def init_callbacks(dash_app, session, x_name, y_name,
         # Title
         annotations = [dict(xref='paper', yref='paper', x=0.0, y=1.05,
                             xanchor='left', yanchor='bottom',
-                            text=user + ' Social Media by Day',
+                            # text=user + ' Social Media by Day',
+                            text='Social Media by Day',
                             font=dict(family='Arial',
                                       size=30,
                                       color='rgb(37,37,37)'),
@@ -515,37 +529,3 @@ def init_callbacks(dash_app, session, x_name, y_name,
 
         layout['annotations'] = annotations
         return {'data': traces, 'layout': layout}
-
-
-# if __name__ == '__main__':
-#     x_name = 'timestamp'
-#     y_name = 'follower_count'
-#     cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-#     session = cluster.connect()
-#     session.set_keyspace('insight')
-#     prepared_query_youtube_day = session.prepare("select timestamp, follower_count from youtube_day "
-#                                                  "where streamer=?");
-#     prepared_query_twitter_day = session.prepare("select timestamp, follower_count from twitter_day "
-#                                                  "where streamer=?");
-#     prepared_query_twitch_day = session.prepare("select timestamp, follower_count from twitch_day "
-#                                                 "where streamer=?");
-#     prepared_query_youtube_hour = session.prepare("select timestamp, follower_count from youtube_hour "
-#                                                   "where streamer=?");
-#     prepared_query_twitter_hour = session.prepare("select timestamp, follower_count from twitter_hour "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_hour = session.prepare("select timestamp, follower_count from twitch_hour "
-#                                                  "where streamer=?");
-#     prepared_query_youtube_minute = session.prepare("select timestamp, follower_count from youtube_minute "
-#                                                     "where streamer=?");
-#     prepared_query_twitter_minute = session.prepare("select timestamp, follower_count from twitter_minute "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_minute = session.prepare("select timestamp, follower_count from twitch_minute "
-#                                                  "where streamer=?");
-#     prepared_query_youtube_live = session.prepare("select timestamp, follower_count from youtube_live "
-#                                                   "where streamer=?");
-#     prepared_query_twitter_live = session.prepare("select timestamp, follower_count from twitter_live "
-#                                                   "where streamer=?");
-#     prepared_query_twitch_live = session.prepare("select timestamp, follower_count from twitch_live "
-#                                                  "where streamer=?");
-#     app.run_server(debug=True, host='0.0.0.0', port=5000)
-
