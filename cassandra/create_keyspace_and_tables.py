@@ -6,14 +6,12 @@ def get_cassandra_tables() -> list:
     tables_to_create = []
     create_table = 'create table if not exists insight.'
     partition_by_streamer = ' (streamer text, timestamp text, follower_count int, primary key (streamer, timestamp)) '
-    partition_by_timestamp = ' (streamer text, timestamp text, follower_count int, primary key (timestamp, streamer)) '
     platforms = ['twitch', 'twitter', 'youtube']
     time_frames = ['_live', '_minute', '_hour', '_day']
     for platform in platforms:
         for time in time_frames:
             # streamer follower by platform and time frame
-            tables_to_create.append(create_table + platform + time + '_by_streamer' + partition_by_streamer + ' ;')
-            tables_to_create.append(create_table + platform + time + '_by_timestamp' + partition_by_timestamp + ' ;')
+            tables_to_create.append(create_table + platform + time + partition_by_streamer + ' ;')
 
     # Unified streamer data
     tables_to_create.append('create table if not exists insight.unified_followers '
