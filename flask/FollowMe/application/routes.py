@@ -28,6 +28,6 @@ if app.config['FLASK_ENV'] == 'development':
 def home():
     """Landing page."""
     return render_template('index.html',
-                           title='Plotly Flask Tutorial.',
+                           title='FollowMe',
                            template='home-template',
-                           body="This is an example homepage served with Flask.")
+                           body="Insight Data Engineering NY Project")

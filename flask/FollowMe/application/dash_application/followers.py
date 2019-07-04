@@ -111,7 +111,7 @@ def get_followers(dropdown_options):
                         options=dropdown_options,
                         value='ninja'
                     )
-                ]#, style={'display': 'block', 'float': 'center'}
+                ]
                 )
             )
         ),
@@ -124,7 +124,7 @@ def get_followers(dropdown_options):
                         interval=1000*60*60,
                         n_intervals=0
                     )
-                ]#, style={'display': 'block'}
+                ]
                 )
             ),
             dbc.Col(
@@ -135,7 +135,7 @@ def get_followers(dropdown_options):
                         interval=1000*60*60*24,
                         n_intervals=0
                     )
-                ]# , style={'display': 'block'}
+                ]
                 )
             )
         ], style={'columnCount': 2}),
@@ -148,7 +148,7 @@ def get_followers(dropdown_options):
                         interval=1000,
                         n_intervals=0
                     )
-                ]  # , style={'display': 'block'}
+                ]
                 )),
             dbc.Col(
                 html.Div([
@@ -158,7 +158,7 @@ def get_followers(dropdown_options):
                         interval=1000 * 60,
                         n_intervals=0
                     )
-                ]  # , style={'display': 'block'}
+                ]
                 )
             )
         ], style={'columnCount': 2})
