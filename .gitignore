@@ -3,7 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-
 cassandra/cassandra_ignored_files/
 data_simulation/giantbomb_api_key.txt
 data_simulation/ignored_simulation/
