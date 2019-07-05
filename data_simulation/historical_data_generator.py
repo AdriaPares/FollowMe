@@ -4,41 +4,113 @@
 # DON'T RUN IN LOCAL
 
 import datetime as dt
-# import time
 import json
 import numpy as np
-from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
+from cassandra.cluster import Cluster, Session
 
 
-def generate_data(streamer, data, final_date=dt.datetime.today(), mode='day', time_format='%Y-%m-%d'):
-    for website, (creation_date, current_subscriber_count) in data.items():
-        creation_datetime = dt.datetime.strptime(creation_date, time_format)
-        try:
-            final_datetime = dt.datetime.strptime(final_date, time_format)
-        except TypeError:
-            final_datetime = final_date
-        number_of_simulations = abs(creation_datetime - final_datetime).days
-
-        for timestamp, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
-                                                                           current_subscriber_count):
-
-            write_to_cassandra(timestamp, website, streamer, simulated_subscriber_count, mode)
-
-
-def write_to_cassandra(timestamp, website, streamer, current_subscriber_count, mode):
-    key = timestamp + '_' + website + '_' + streamer
-    cassandra_session.execute(cassandra_queries[website + '_' + mode], [key, current_subscriber_count])
+# Writes data to Cassandra Cluster
+def write_to_cassandra(session: Session, random_step_data: dict, table: str) -> None:
+    session.execute("INSERT INTO insight."
+                    + table +
+                    " (streamer, timestamp, twitch_count, twitter_count, youtube_count, total_count) VALUES ('"
+                    + random_step_data.get('streamer') + "', "
+                    + "'" + random_step_data.get('timestamp') + "', "
+                    + str(random_step_data.get('twitch_count')) + ", "
+                    + str(random_step_data.get('twitter_count')) + ", "
+                    + str(random_step_data.get('youtube_count')) + ", "
+                    + str(random_step_data.get('total_count')) + ");"
+                    )
 
 
-def random_walk_generator(creation_datetime, number_of_simulations, current_subscriber_count,
-                          time_format='%Y-%m-%d', mode='day'):
-    # we generate bounded random walk with an std of 1% of the max. We assume initial subscriber_count is 0
-    random_steps = bounded_random_walk(number_of_simulations, 0, current_subscriber_count,
-                                       current_subscriber_count * 0.01)
-    for i, simulated_subscriber_count in enumerate(random_steps):
-        yield (dt.datetime.strftime(creation_datetime + dt.timedelta(days=i), time_format),
-               int(simulated_subscriber_count))
+# We generate bounded random walk with an std of 10% of the max. We assume initial subscriber_count is 0
+def random_walk_day_generator(streamer: str, accounts_data: dict, time_format: str, simulations: int,
+                              initial_datetime: dt.datetime = dt.datetime.strptime('2019-01-01', '%Y-%m-%d')
+                              ) -> list:
+
+    followers_twitter = accounts_data.get('platform_data').get('twitter').get('total_followers')
+    followers_twitch = accounts_data.get('platform_data').get('twitch').get('total_followers')
+    followers_youtube = accounts_data.get('platform_data').get('youtube').get('total_followers')
+
+    initial_date_twitter = accounts_data.get('platform_data').get('twitter').get('initial_date')
+    initial_date_twitch = accounts_data.get('platform_data').get('twitch').get('initial_date')
+    initial_date_youtube = accounts_data.get('platform_data').get('youtube').get('initial_date')
+
+    twitter_simulations = get_number_of_simulations(dt.datetime.strptime(initial_date_twitter, time_format))
+    twitch_simulations = get_number_of_simulations(dt.datetime.strptime(initial_date_twitch, time_format))
+    youtube_simulations = get_number_of_simulations(dt.datetime.strptime(initial_date_youtube, time_format))
+
+    random_steps_twitter = ([0] * (simulations - twitter_simulations)) + \
+                           bounded_random_walk(twitter_simulations, 0, followers_twitter, followers_twitter * 0.01)
+
+    random_steps_twitch = ([0] * (simulations - twitch_simulations)) + \
+                          bounded_random_walk(twitch_simulations, 0, followers_twitch, followers_twitch * 0.01)
+
+    random_steps_youtube = ([0] * (simulations - youtube_simulations)) + \
+                           bounded_random_walk(youtube_simulations, 0, followers_youtube, followers_youtube * 0.01)
+
+    for i, (twitter_step, twitch_step, youtube_step) in enumerate(
+            zip(random_steps_twitter, random_steps_twitch, random_steps_youtube)):
+        yield {'streamer': streamer,
+               'timestamp': dt.datetime.strftime(initial_datetime + dt.timedelta(days=i), time_format),
+               'twitch_count': int(twitch_step),
+               'twitter_count': int(twitter_step),
+               'youtube_count': int(youtube_step),
+               'total_count': int(twitch_step) + int(twitter_step) + int(youtube_step)}
+
+
+def random_walk_hour_generator(streamer: str, accounts_data: dict, time_format: str, simulations: int,
+                               initial_datetime: dt.datetime = dt.datetime.today() - dt.timedelta(days=2)
+                               ) -> list:
+
+    followers_twitter = accounts_data.get('platform_data').get('twitter').get('total_followers')
+    followers_twitch = accounts_data.get('platform_data').get('twitch').get('total_followers')
+    followers_youtube = accounts_data.get('platform_data').get('youtube').get('total_followers')
+
+    random_steps_twitter = bounded_random_walk(simulations, 0, followers_twitter, followers_twitter * 0.01)
+
+    random_steps_twitch = bounded_random_walk(simulations, 0, followers_twitch, followers_twitch * 0.01)
+
+    random_steps_youtube = bounded_random_walk(simulations, 0, followers_youtube, followers_youtube * 0.01)
+
+    # Get two days ago at 00:00
+    initial_datetime = dt.datetime.strptime(initial_datetime.strftime('%Y-%m-%d') + '_00', time_format)
+
+    for i, (twitter_step, twitch_step, youtube_step) in enumerate(
+            zip(random_steps_twitter, random_steps_twitch, random_steps_youtube)):
+        yield {'streamer': streamer,
+               'timestamp': dt.datetime.strftime(initial_datetime + dt.timedelta(hours=i), time_format),
+               'twitch_count': int(twitch_step),
+               'twitter_count': int(twitter_step),
+               'youtube_count': int(youtube_step),
+               'total_count': int(twitch_step) + int(twitter_step) + int(youtube_step)}
+
+
+def random_walk_minute_generator(streamer: str, accounts_data: dict, time_format: str, simulations: int,
+                                 initial_datetime: dt.datetime = dt.datetime.today() - dt.timedelta(hours=2)
+                                 ) -> list:
+
+    followers_twitter = accounts_data.get('platform_data').get('twitter').get('total_followers')
+    followers_twitch = accounts_data.get('platform_data').get('twitch').get('total_followers')
+    followers_youtube = accounts_data.get('platform_data').get('youtube').get('total_followers')
+
+    random_steps_twitter = bounded_random_walk(simulations, 0, followers_twitter, followers_twitter * 0.01)
+
+    random_steps_twitch = bounded_random_walk(simulations, 0, followers_twitch, followers_twitch * 0.01)
+
+    random_steps_youtube = bounded_random_walk(simulations, 0, followers_youtube, followers_youtube * 0.01)
+
+    # Get two days ago at 00:00
+    initial_datetime = dt.datetime.strptime(initial_datetime.strftime('%Y-%m-%d_%H') + '-00', time_format)
+
+    for i, (twitter_step, twitch_step, youtube_step) in enumerate(
+            zip(random_steps_twitter, random_steps_twitch, random_steps_youtube)):
+        yield {'streamer': streamer,
+               'timestamp': dt.datetime.strftime(initial_datetime + dt.timedelta(minutes=i), time_format),
+               'twitch_count': int(twitch_step),
+               'twitter_count': int(twitter_step),
+               'youtube_count': int(youtube_step),
+               'total_count': int(twitch_step) + int(twitter_step) + int(youtube_step)}
 
 
 def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.inf):
@@ -65,58 +137,91 @@ def bounded_random_walk(length, start, end, std, lower_bound=0, upper_bound=np.i
     lower_deltas = lower_bound_delta - rand_deltas
     rand_deltas[lower_slips_mask] = (lower_bound_delta + lower_deltas)[lower_slips_mask]
 
-    return trend_line + rand_deltas
+    return list(trend_line + rand_deltas)
 
 
-def get_queries():
-    queries = dict(
-        twitch_day=cassandra_session.prepare("insert into twitch_day "
-                                             "(timestamp_name, follower_count) values (?,?);"),
-        twitter_day=cassandra_session.prepare("insert into twitter_day "
-                                              "(timestamp_name, follower_count) values (?,?);"),
-        youtube_day=cassandra_session.prepare("insert into youtube_day "
-                                              "(timestamp_name, subscriber_count) values (?,?);"),
+def write_accounts(session: Session, accounts: dict) -> None:
 
-        twitch_hour=cassandra_session.prepare("insert into twitch_hour "
-                                              "(timestamp_name, follower_count) values (?,?);"),
-        twitter_hour=cassandra_session.prepare("insert into twitter_hour "
-                                               "(timestamp_name, follower_count) values (?,?);"),
-        youtube_hour=cassandra_session.prepare("insert into youtube_hour "
-                                               "(timestamp_name, subscriber_count) values (?,?);"),
+    games_prep = session.prepare("insert into accounts (streamer, language, game) values (?,?,?)")
 
-        twitch_minute=cassandra_session.prepare("insert into twitch_minute "
-                                                "(timestamp_name, follower_count) values (?,?);"),
-        twitter_minute=cassandra_session.prepare("insert into twitter_minute "
-                                                 "(timestamp_name, follower_count) values (?,?);"),
-        youtube_minute=cassandra_session.prepare("insert into youtube_minute "
-                                                 "(timestamp_name, subscriber_count) values (?,?);"))
-    return queries
+    for streamer, attributes in accounts.items():
+        session.execute(games_prep, [streamer, attributes['language'], attributes['game']])
+
+    print('ACCOUNTS DONE.')
 
 
-cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-cassandra_session = cassandra_cluster.connect('insight')
+def write_games(session: Session, games: dict) -> None:
 
-cassandra_queries = get_queries()
+    games_prep = session.prepare("insert into games (game, genre, console) values (?,?,?)")
+
+    for game, attributes in games.items():
+        session.execute(games_prep, [game, attributes['genre'], attributes['console']])
+
+    print('GAMES DONE.')
 
 
-with open('random_accounts.json') as f:
-    accounts_dict = json.load(f)
+def generate_day_data(session: Session, accounts: dict, simulations: int) -> None:
+    time_format = '%Y-%m-%d'
+    for streamer, account_data in accounts.items():
+        for random_step in random_walk_day_generator(streamer, account_data, time_format, simulations):
+            write_to_cassandra(session, random_step, 'unified_day')
+    print('DAYS DONE.')
 
-# Day generation
-for streamer_name, streamer_data in accounts_dict.items():
-    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today()-dt.timedelta(days=2))
-    print(streamer_name + ' days done.')
 
-# Hour generation
-for streamer_name, streamer_data in accounts_dict.items():
-    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today()-dt.timedelta(hours=2),
-                  time_format='%Y-%m-%d_%H')
-    print(streamer_name + ' hours done.')
+def generate_hour_data(session: Session, accounts: dict, simulations: int) -> None:
+    time_format = '%Y-%m-%d_%H'
+    for streamer, account_data in accounts.items():
+        for random_step in random_walk_hour_generator(streamer, account_data, time_format, simulations):
+            write_to_cassandra(session, random_step, 'unified_hour')
+    # data = {'streamer': '', date: '', 'twitch_count': 1, 'twitter_count': 1, 'youtube_count': 1, 'total_count': 3}
+    print('HOURS DONE.')
 
-# Minute generation
-for streamer_name, streamer_data in accounts_dict.items():
-    generate_data(streamer_name, streamer_data, final_date=dt.datetime.today(), time_format='%Y-%m-%d_%H-%M')
-    print(streamer_name + ' minutes done.')
 
-print('SIMULATION OVER')
-cassandra_cluster.shutdown()
+def generate_minute_data(session: Session, accounts: dict, simulations: int) -> None:
+    time_format = '%Y-%m-%d_%H-%M'
+    for streamer, account_data in accounts.items():
+        for random_step in random_walk_minute_generator(streamer, account_data, time_format, simulations):
+            write_to_cassandra(session, random_step, 'unified_minute')
+    # data = {'streamer': '', date: '', 'twitch_count': 1, 'twitter_count': 1, 'youtube_count': 1, 'total_count': 3}
+    print('MINUTES DONE.')
+
+
+def get_accounts(accounts_file: str = 'accounts_info.json') -> dict:
+    with open(accounts_file) as acc_file:
+        acc_dict = json.load(acc_file)
+    return acc_dict
+
+
+def get_games(games_file: str = 'games_info.json') -> dict:
+    with open(games_file) as g_file:
+        g_dict = json.load(g_file)
+    return g_dict
+
+
+def get_number_of_simulations(initial_datetime: dt.datetime = dt.datetime.strptime('2019-01-01', '%Y-%m-%d'),
+                              final_datetime: dt.datetime = dt.datetime.today() - dt.timedelta(days=2)
+                              ) -> int:
+    return abs(initial_datetime - final_datetime).days
+
+
+if __name__ == '__main__':
+    cassandra_cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
+    cassandra_session = cassandra_cluster.connect('insight')
+
+    number_of_simulations = get_number_of_simulations()
+
+    accounts_dict = get_accounts()
+    games_dict = get_games()
+
+    write_accounts(cassandra_session, accounts_dict)
+    write_games(cassandra_session, games_dict)
+
+    # TimeZones can mess with this part, not too relevant for a simulation but it will give funky results
+
+    generate_day_data(cassandra_session, accounts_dict, number_of_simulations)
+    generate_hour_data(cassandra_session, accounts_dict, 46 + dt.datetime.now().hour)
+    generate_minute_data(cassandra_session, accounts_dict, 120)
+
+    print('SIMULATION OVER')
+
+    cassandra_cluster.shutdown()

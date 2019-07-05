@@ -1,5 +1,5 @@
-# Takes a JSON file and outputs simulated JSON files for 12 hours of stream by default
-# To be run in Simulation Node, connected to S3(?)
+# Takes a JSON file and outputs simulated JSON files
+# To be run in Simulation Node
 # DON'T RUN IN LOCAL
 
 import datetime as dt
@@ -8,30 +8,27 @@ import json
 import numpy as np
 import boto3
 import os
-# from cassandra.cluster import Cluster
 
 
 def write_to_s3(timestamp, website, streamer, current_subscriber_count):
     key = timestamp + '_' + website + '_' + streamer
     with open(simulation_local_dump + key + '.json', 'w+') as g:
         json.dump({'total': current_subscriber_count}, g)
+
+    # Don't run this unless you have money to spare, it's 5$/1M files
     # s3.put_object(Bucket=bucket_name, Key=key, Body=json.dump({streamer: current_subscriber_count}))
+
     s3.upload_file(simulation_local_dump + key + '.json', bucket_name, key + '.json')
     os.remove(simulation_local_dump + key + '.json')
 
 
 def generate_data(streamer, data, time_format='%Y-%m-%d_%H-%M-%S'):
-    # , final_date=dt.datetime.today() + dt.timedelta(hours=1)):
-    # try:
-    #     final_datetime = dt.datetime.strptime(final_date, time_format)
-    # except TypeError:
-    #     final_datetime = final_date
+
     for website, (creation_date, current_subscriber_count) in data.items():
         creation_datetime = dt.datetime(2000, 1, 1, 0, 0, 0)
 
-        # number_of_simulations = int(abs(creation_datetime - final_datetime).total_seconds()//2)
-        # 10 mins of sims
-        number_of_simulations = 600*1
+        # 10 minutes of simulations
+        number_of_simulations = 60*10
 
         for timestamp, simulated_subscriber_count in random_walk_generator(creation_datetime, number_of_simulations,
                                                                            current_subscriber_count, time_format):
