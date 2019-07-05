@@ -5,19 +5,20 @@ from cassandra.cluster import Cluster, Session
 def get_cassandra_tables() -> list:
     tables_to_create = []
     create_table = 'create table if not exists insight.'
-    partition_by_streamer = ' (streamer text, timestamp text, follower_count int, primary key (streamer, timestamp)) '
-    platforms = ['twitch', 'twitter', 'youtube']
-    time_frames = ['_live', '_minute', '_hour', '_day']
-    for platform in platforms:
-        for time in time_frames:
-            # streamer follower by platform and time frame
-            tables_to_create.append(create_table + platform + time + partition_by_streamer + ' ;')
+    live_columns = ' (streamer text, timestamp text, follower_count int, primary key (streamer, timestamp));'
+    live_tables = ['twitch_live', 'twitter_live', 'youtube_live']
 
-    # Unified streamer data
-    tables_to_create.append('create table if not exists insight.unified_followers '
-                            '(streamer text, timestamp text, youtube_count int, twitter_count int, twitch_count int, '
-                            'total_count bigint, '
-                            'primary key (timestamp, streamer));')
+    unified_columns = ' (streamer text, timestamp text, youtube_count int, twitter_count int, twitch_count int, ' \
+                      'total_count bigint, primary key (streamer, timestamp));'
+    unified_tables = ['unified_minute', 'unified_hour', 'unified_day']
+
+    # Create live tables
+    for live_table in live_tables:
+        tables_to_create.append(create_table + live_table + live_columns)
+
+    # Unified tables
+    for unified_table in unified_tables:
+        tables_to_create.append(create_table + unified_table + unified_columns)
 
     # Aggregations
     tables_to_create.append('create table if not exists insight.language_aggregation '
@@ -45,6 +46,7 @@ def create_keyspace(session: Session, keyspace: str = 'insight') -> None:
 
 
 # Create Tables
+# Tables are partitioned by streamer and clustered by timestamp
 def create_tables(tables: list, session: Session) -> None:
     for table in tables:
         session.execute(table)
