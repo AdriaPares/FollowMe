@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+cassandra/cassandra_ignored_files/
+data_simulation/giantbomb_api_key.txt
+data_simulation/ignored_simulation/
+spark/ignore_scripts/
 airflow/ignored_dags/
 airflow/example_dags.py
 dummy_batch_dump/
