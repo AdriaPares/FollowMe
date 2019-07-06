@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+airflow/ignored_dags/
 airflow/example_dags.py
 dummy_batch_dump/
 api_keys.json
