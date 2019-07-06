@@ -5,20 +5,17 @@ from datetime import timedelta, datetime
 default_args = {
     'owner': 'insight',
     'depends_on_past': False,
-    'start_date': datetime.today() - timedelta(minutes=20),
-    # datetime.now() - timedelta(minutes=20) # could be useful for the future
+    'start_date': datetime.today(),
     'email': ['airflow@gmail.com'],
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 5,
-    'retry_delay': timedelta(minutes=5),
-    # 'queue': 'bash_queue',
-    # 'pool': 'backfill',
-    # 'priority_weight': 10,
-    # 'end_date': datetime(2016, 1, 1),
+    'retry_delay': timedelta(minutes=1)
 }
 
-dag = DAG('spark_minute_to_hour', default_args=default_args, schedule_interval=timedelta(hours=1))
+# Run once an hour at the beginning of the hour, except for hour zero (midnight)
+# At that time, hour_to_day runs this dag as a subset of its execution, so we don't require this one
+dag = DAG('spark_minute_to_hour', default_args=default_args, schedule_interval='0 1-23 * * *')
 
 user = 'ubuntu'
 host = 'ec2-3-218-220-243.compute-1.amazonaws.com'

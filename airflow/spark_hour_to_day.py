@@ -5,20 +5,16 @@ from datetime import timedelta, datetime
 default_args = {
     'owner': 'insight',
     'depends_on_past': False,
-    'start_date': datetime.today() - timedelta(minutes=20),
-    # datetime.now() - timedelta(minutes=20) # could be useful for the future
+    'start_date': datetime.today(),
     'email': ['airflow@gmail.com'],
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 5,
-    'retry_delay': timedelta(minutes=5),
-    # 'queue': 'bash_queue',
-    # 'pool': 'backfill',
-    # 'priority_weight': 10,
-    # 'end_date': datetime(2016, 1, 1),
+    'retry_delay': timedelta(minutes=5)
 }
 
-dag = DAG('spark_minute_to_hour', default_args=default_args, schedule_interval=timedelta(days=1))
+# Run once at midnight every day. Custom Airflow scheduling, rather than 0 0 0 * * *
+dag = DAG('spark_hour_to_day', default_args=default_args, schedule_interval='0 0 * * *')
 
 user = 'ubuntu'
 host = 'ec2-3-218-220-243.compute-1.amazonaws.com'
