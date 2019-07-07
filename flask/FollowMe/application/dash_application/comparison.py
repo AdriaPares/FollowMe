@@ -42,7 +42,8 @@ def get_layout() -> go.Layout:
                 r=20,
                 t=110,
             ),
-            showlegend=False,
+            showlegend=True,
+            legend=dict(x=0, y=.8),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)'
         )
@@ -68,8 +69,8 @@ def get_traces(x_data: list, y_data: list, colors: list, line_size: list,
             mode='lines',
             line=dict(color=colors[i], width=line_size[i]),
             marker=dict(color=colors[i], size=mode_size[i]),
-            text=labels[i],
-            name='',
+            text='',
+            name=labels[i],
             connectgaps=True,
         ))
     return traces
@@ -199,9 +200,9 @@ def init_callbacks(dash_app, session, x_name, prepared_query_day):
 
         labels = [user_1, user_2]
 
-        colors_youtube = ['rgb(255,0,0)', 'rgb(255,0,0)']
-        colors_twitter = ['rgb(0,172,237)', 'rgb(0,172,237)']
-        colors_twitch = ['rgb(100,65,165)', 'rgb(100,65,165)']
+        colors_youtube = ['rgb(255,0,0)', 'rgb(255,153,0)']
+        colors_twitter = ['rgb(0,172,237)', 'rgb(255,153,0)']
+        colors_twitch = ['rgb(100,65,165)', 'rgb(255,153,0)']
 
         mode_size = [8, 8]
 

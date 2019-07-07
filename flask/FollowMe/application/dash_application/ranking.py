@@ -36,15 +36,12 @@ def get_joined_data_frame(session: Session, query_accounts: str, query_games: st
     games_df = get_data_frame_no_parameter(session, query_games)
     table_df = get_data_frame_with_parameter(session, prepared_query_day, timestamp)
 
-    print(accounts_df)
-    print(games_df)
-    print(table_df)
+    return accounts_df.merge(games_df, on='game', how='inner').merge(table_df, on='streamer', how='inner')
 
-    accounts_df\
-        .join(games_df, accounts_df.game == games_df.game)\
-        .join(table_df, accounts_df.streamer == table_df.streamer)
 
-    return accounts_df
+def get_options(session: Session, prepared_query: str, column: str) -> list:
+    option_df = get_data_frame_no_parameter(session, prepared_query)
+    return list(option_df[column].unique())
 
 
 def Add_Dash(server):
@@ -82,6 +79,13 @@ def Add_Dash(server):
     query_accounts = 'select streamer, game, language from accounts'
     query_games = 'select game, console, genre from games'
 
+    all_options = {
+        'game': get_options(session, query_games, 'game'),
+        'genre': get_options(session, query_games, 'genre'),
+        'console': get_options(session, query_games, 'console'),
+        'language': get_options(session, query_accounts, 'language')
+    }
+
     # Create Dash Layout comprised of Data Tables
 
     dash_app.layout = html.Div(
@@ -89,7 +93,7 @@ def Add_Dash(server):
         id='dash-container'
       )
 
-    init_callbacks(dash_app, date_dict, session, query_accounts, query_games, prepared_query_day, day)
+    init_callbacks(dash_app, date_dict, session, query_accounts, query_games, prepared_query_day, all_options)
 
     return dash_app.server
 
@@ -108,7 +112,13 @@ def get_categories():
                             {'label': 'Last Month', 'value': 'last_month'}
                         ],
                         value='yesterday'
-                    ),
+                    )
+                ]),
+            )
+        ]),
+        dbc.Row([
+            dbc.Col(
+                html.Div([
                     dcc.Dropdown(
                         id='category',
                         options=[
@@ -118,8 +128,15 @@ def get_categories():
                             {'label': 'Console', 'value': 'console'},
                         ],
                         value='game'
+                    ),
+                ], style={'width': '49%'}),
+            ),
+            dbc.Col(
+                html.Div([
+                    dcc.Dropdown(
+                        id='subcategory'
                     )
-                ])
+                ], style={'width': '49%'})
             ),
         ]),
         dbc.Row(
@@ -136,18 +153,29 @@ def get_categories():
     return layout
 
 
-def init_callbacks(dash_app, date_dict, session, query_accounts, query_games, prepared_query_day, day):
+def init_callbacks(dash_app, date_dict, session, query_accounts, query_games, prepared_query_day, all_options):
+
+    @dash_app.callback([Output('subcategory', 'options'),
+                        Output('subcategory', 'value')],
+                       [Input('category', 'value')])
+    def update_subcategory(category):
+        return [{'label': i, 'value': i} for i in all_options[category]], all_options[category][0]
 
     @dash_app.callback([Output('table', 'data'),
                         Output('table', 'columns')],
                        [Input('date', 'value'),
-                        Input('category', 'value')])
-    def update_table(date, category):
+                        Input('category', 'value'),
+                        Input('subcategory', 'value')])
+    def update_table(date, category, subcategory):
+
         query_timestamp = date_dict[date]
+
         # filter by timestamp
-        table_df = get_joined_data_frame(session, query_accounts, query_games, prepared_query_day, day)
-        print(table_df)
-        columns = [{'id': c, 'name': c} for c in table_df.columns]
-        table_data = table_df.sort_values(by=['total_count'], ascending=False).to_dict('records')
+        table_df = get_joined_data_frame(session, query_accounts, query_games, prepared_query_day, query_timestamp)
+        columns_to_show = ['streamer', category, 'youtube_count', 'twitch_count', 'twitter_count', 'total_count']
+        columns = [{'id': c, 'name': c} for c in columns_to_show]
+        table_data = table_df[columns_to_show][table_df[category] == subcategory]\
+            .sort_values(by=['total_count'], ascending=False)\
+            .to_dict('records')
 
         return table_data, columns

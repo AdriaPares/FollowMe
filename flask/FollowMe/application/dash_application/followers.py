@@ -9,6 +9,7 @@ import plotly.graph_objs as go
 from cassandra.cluster import Cluster, Session
 from cassandra.query import PreparedStatement
 import dash_bootstrap_components as dbc
+from datetime import datetime as dt
 
 
 def get_layout() -> go.Layout:
@@ -75,11 +76,15 @@ def get_traces(x_data: list, y_data: list, people: int) -> list:
             mode='lines',
             line=dict(color=colors[i], width=line_size[i]),
             marker=dict(color=colors[i], size=mode_size[i]),
-            text=labels[i],
-            name='',
+            text='',
+            name=labels[i],
             connectgaps=True,
         ))
     return traces
+
+
+def change_time_format(series: pd.Series, time_format_in: str ,time_format_out: str) -> pd.Series:
+    return series.map(lambda x: dt.strftime(dt.strptime(x, time_format_in), time_format_out))
 
 
 def Add_Dash(server):
@@ -158,46 +163,31 @@ def get_followers(dropdown_options):
                         options=dropdown_options,
                         value='ninja'
                     )
-                ]
-                )
+                ])
             )
         ),
         dbc.Row([
-            dbc.Col(
-                html.Div([
-                    dcc.Graph(id='hour-graph', animate=True),
-                    dcc.Interval(
-                        id='hour-update',
-                        interval=1000*60*60,
-                        n_intervals=0
-                    )
-                ]
-                )
-            ),
-            dbc.Col(
+            dbc.Col([
                 html.Div([
                     dcc.Graph(id='day-graph', animate=True),
                     dcc.Interval(
                         id='day-update',
-                        interval=1000*60*60*24,
+                        interval=1000 * 60 * 60 * 24,
                         n_intervals=0
                     )
-                ]
-                )
-            )
-        ], style={'columnCount': 2}),
-        dbc.Row([
-            dbc.Col(
+                ]),
                 html.Div([
-                    dcc.Graph(id='live-graph', animate=True),
+                    dcc.Graph(id='hour-graph', animate=True),
                     dcc.Interval(
-                        id='live-update',
-                        interval=1000,
+                        id='hour-update',
+                        interval=1000 * 60 * 60,
                         n_intervals=0
                     )
-                ]
-                )),
-            dbc.Col(
+                ])
+            ]),
+        ]),
+        dbc.Row([
+            dbc.Col([
                 html.Div([
                     dcc.Graph(id='minute-graph', animate=True),
                     dcc.Interval(
@@ -205,12 +195,18 @@ def get_followers(dropdown_options):
                         interval=1000 * 60,
                         n_intervals=0
                     )
-                ]
-                )
-            )
-        ], style={'columnCount': 2})
-    ]
-    )
+                ]),
+                html.Div([
+                    dcc.Graph(id='live-graph', animate=True),
+                    dcc.Interval(
+                        id='live-update',
+                        interval=1000,
+                        n_intervals=0
+                    )
+                ])
+            ]),
+        ])
+    ])
     return layout
 
 
@@ -222,11 +218,16 @@ def init_callbacks(dash_app, session, x_name, y_name,
                         Input('user', 'value')])
     def update_live_graph(n, user):
 
+        time_format_in = '%Y-%m-%d_%H-%M-%S'
+        time_format_out = '%Y-%m-%d %H:%M:%S'
+
         df_youtube = get_data_frame(session, prepared_query_youtube_live, user)
         df_twitch = get_data_frame(session, prepared_query_twitch_live, user)
         df_twitter = get_data_frame(session, prepared_query_twitter_live, user)
 
-        x_data = [df_youtube[x_name], df_twitter[x_name], df_twitch[x_name]]
+        x_data = [change_time_format(df_youtube[x_name], time_format_in, time_format_out),
+                  change_time_format(df_twitter[x_name], time_format_in, time_format_out),
+                  change_time_format(df_twitch[x_name], time_format_in, time_format_out)]
         y_data = [df_youtube[y_name], df_twitter[y_name], df_twitch[y_name]]
 
         traces = get_traces(x_data, y_data, 3)
@@ -240,9 +241,13 @@ def init_callbacks(dash_app, session, x_name, y_name,
                         Input('user', 'value')])
     def update_minute_graph(n, user):
 
-        df_minute = get_data_frame(session, prepared_query_minute, user)
+        time_format_in = '%Y-%m-%d_%H-%M'
+        time_format_out = '%Y-%m-%d %H:%M'
 
-        x_data = [df_minute[x_name], df_minute[x_name], df_minute[x_name]]
+        df_minute = get_data_frame(session, prepared_query_minute, user)
+        x_data_reformatted = change_time_format(df_minute[x_name], time_format_in, time_format_out)
+
+        x_data = [x_data_reformatted, x_data_reformatted, x_data_reformatted]
         y_data = [df_minute['youtube_count'], df_minute['twitter_count'], df_minute['twitch_count']]
 
         traces = get_traces(x_data, y_data, 3)
@@ -256,9 +261,13 @@ def init_callbacks(dash_app, session, x_name, y_name,
                         Input('user', 'value')])
     def update_hour_graph(n, user):
 
-        df_hour = get_data_frame(session, prepared_query_hour, user)
+        time_format_in = '%Y-%m-%d_%H'
+        time_format_out = '%Y-%m-%d %H'
 
-        x_data = [df_hour[x_name], df_hour[x_name], df_hour[x_name]]
+        df_hour = get_data_frame(session, prepared_query_hour, user)
+        x_data_reformatted = change_time_format(df_hour[x_name], time_format_in, time_format_out)
+
+        x_data = [x_data_reformatted, x_data_reformatted, x_data_reformatted]
         y_data = [df_hour['youtube_count'], df_hour['twitter_count'], df_hour['twitch_count']]
 
         traces = get_traces(x_data, y_data, 3)
