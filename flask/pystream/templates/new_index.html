@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>BitWatch</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <!-- Custom styles for this template -->
+    <link href="/static/css/mycelias-styles.css" rel="stylesheet" type="text/css">
+    <link href="starter-template.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">
+            <img src="/static/logo.png" width="40" height="40" alt="">
+        </a>
+        <a class="navbar-brand" href="#">BitWatch</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Search User</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Rankings</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+<br><br>
+
+    <div class="active-cyan-3 active-cyan-4 mb-4">
+        <input class="form-control" type="text" placeholder="Search" aria-label="Search">
+    </div>
+
+<br><br>
+
+    <div class="container">
+        <div class="starter-template">
+            <h2>Summary Statistics</h2>
+            <p class="lead">Statistics associated with address cluster</p>
+        </div>
+
+        <table class="table table-hover">
+            <tr>
+                <th>Statistic</th>
+                <th>Value</th>
+            </tr>
+            {% for statistic in statistics %}
+                <tr>
+                    <td>{{ statistic['label'] }}</td>
+                    <td>{{ statistic['value']}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <div class="starter-template">
+            <h2>Associated Addresses</h2>
+            <p class="lead">List of addresses associated with the input address</p>
+        </div>
+
+        <table class="table table-hover">
+            <tr>
+                <th>#</th>
+                <th>Address</th>
+                <th>Component</th>
+            </tr>
+            {% for address in addresses %}
+                <tr>
+                    <td>{{ address['number'] }}</td>
+                    <td>{{ address['address'] }}</td>
+                    <td>{{ address['component']}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="static/js/bootstrap.min.js"></script>
+    </div>
+
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+
+</html>

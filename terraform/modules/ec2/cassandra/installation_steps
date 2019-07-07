@@ -1,0 +1,72 @@
+For now following a mixture of these steps. Added for reference, detailed steps are below
+
+https://cassandra.apache.org/download/
+
+https://github.com/InsightDataScience/data-engineering-ecosystem/wiki/Cassandra
+
+but using my default .yaml and rackdc.properties (research this last one, no idea about what this means or does).
+
+
+#DETAILED STEPS
+
+sudo apt install openjdk-8-jre -y
+
+# change 311x accordingly
+echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+
+curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+
+sudo apt-get update
+
+sudo apt-get install cassandra [probably add -y]
+
+# cassandra will be in /etc/cassandra, and it will start automatically.
+
+vi ~/.profile
+
+# Add the following:
+# Cassandra
+export CASSANDRA_HOME=/etc/cassandra
+export PATH=$PATH:$CASSANDRA_HOME/bin
+
+source ~/.profile
+
+# You can check with env if it's correctly set up.
+
+# Edit .yaml files
+
+sudo service cassandra stop # Otherwise we can't change configuration.
+
+sudo vi /etc/cassandra/cassandra.yaml
+
+# Change the following lines:
+
+[
+seeds: "10.0.0.9,10.0.0.10,10.0.0.11,10.0.0.12" # With your private IPs
+listen_address: the node's private IP (should be one of the seeds typically)
+rpc_address: the node's private IP (should be one of the seeds typically)
+endpoint_snitch: Ec2Snitch # Should be Ec2MultiRegionSnitch if you want multiple regions (too much for this project)
+
+# Launch cassandra (this way is proooobably wrong):
+
+sudo cassandra -R -Dcassandra.ignore_dc=true -Dcassandra.ignore_rack=true
+
+# You should see HANDSHAKE popping up, with the IPs of the other nodes. This means it's cool.
+
+# Test if it's up:
+
+cqlsh 10.0.0.9 (or node's private ip).
+
+# We can log into other nodes as well by picking their IPs
+
+#THESE DON'T WORK
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+
+
+
+
+
+
+https://www.liquidweb.com/kb/install-cassandra-ubuntu-16-04-lts/
