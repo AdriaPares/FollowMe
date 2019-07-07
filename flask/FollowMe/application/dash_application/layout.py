@@ -10,7 +10,9 @@ html_layout = '''<!DOCTYPE html>
                             <nav>
                               <a href="/"><i class="fas fa-home"></i> FollowMe</a>
                               <a href="/followers/"><i class="fas fa-chart-line"></i> Follower Count</a>
+                              <a href="/comparison/"><i class="fab fa-battle-net"></i> Compare</a>
                               <a href="/categories/"><i class="fas fa-medal"></i> Categories</a>
+                              <a href="/ranking/"><i class="fas fa-award"></i> Ranking</a>
                             </nav>
                             {%app_entry%}
                             <footer>
