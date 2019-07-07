@@ -26,4 +26,12 @@ def create_app():
         from .dash_application import categories
         app = categories.Add_Dash(app)
 
+        # Fourth import
+        from .dash_application import comparison
+        app = comparison.Add_Dash(app)
+
+        # Fifth import
+        from .dash_application import ranking
+        app = ranking.Add_Dash(app)
+
         return app
