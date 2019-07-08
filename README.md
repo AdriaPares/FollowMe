@@ -1,11 +1,8 @@
 # FollowMe
 
-Data Engineering Insight Project
+![alt-text](./img/FollowMeLogo_small.png)
 
-<p align="center">
-  <img width="460" height="300" src="https:">
-</p>
-![alt-text](./img/FollowMeLogo.png)
+Data Engineering Insight Project
 
 One line introducing the project, plus image.
 
