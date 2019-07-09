@@ -1,0 +1,147 @@
+# We set up an m5.large with 80 GiB
+
+# Install PostgreSQL for Airflow database. (for ease of use, we will refer to PostgreSQL as PG)
+
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib -y
+
+# Create a DB for Airflow in PG
+
+sudo -u postgres psql
+
+
+CREATE ROLE ubuntu;
+CREATE DATABASE airflow;
+GRANT ALL PRIVILEGES on database airflow to ubuntu;
+ALTER ROLE ubuntu SUPERUSER;
+ALTER ROLE ubuntu CREATEDB;
+ALTER ROLE ubuntu WITH LOGIN;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public to ubuntu;
+
+# Connect to db
+
+postgres-# \c airflow
+
+# Exit PG
+
+\q
+
+# Modify pg_hba.conf. Typically, it will be here:
+
+sudo vi /etc/postgresql/9.5/main/pg_hba.conf
+
+# Change ipv4 to 0.0.0.0/0, also set md5 to trust to avoid pwd issues
+
+# Go to postgresql.conf
+
+sudo vi /etc/postgresql/9.5/main/postgresql.conf
+
+# and listen_addresses to '*'.
+
+## [[WARNING]] I don't really like this, maybe we need to make it so that it only listens to localhost
+## same for ipv4, it is probably reasonable to assume that nobody other than the airflow instance should have access
+
+# Restart PG
+
+sudo service postgresql restart
+
+
+## Airflow
+
+# Install dependencies:
+
+# sudo apt-get install libmysqlclient-dev ( for airflow airflow mysql )
+# sudo apt-get install libssl-dev ( for airflow cryptograph package)
+# sudo apt-get install libkrb5-dev (  for airflow kerbero package )
+# sudo apt-get install libsasl2-dev ( for airflow hive package )
+
+sudo apt-get install libmysqlclient-dev -y
+sudo apt-get install libssl-dev -y
+sudo apt-get install libkrb5-dev -y
+sudo apt-get install libsasl2-dev -y
+
+# Get pip3 and install airflow
+
+sudo apt install python3-pip -y
+sudo pip3 install apache-airflow
+# sudo pip3 install libpq-dev
+sudo apt install libpq-dev
+sudo pip3 install psycopg2
+sudo pip3 install Celery
+
+# Initiate airflow database
+
+airflow initdb
+
+# Set Airflow home in .profile
+
+export AIRFLOW_HOME=~/airflow
+
+# Modify airflow.cfg
+
+vi $AIRFLOW_HOME/airflow.cfg
+
+executor = CeleryExecutor
+sql_alchemy_conn = postgresql+psycopg2://ubuntu@localhost:5432/airflow
+load_examples = False
+
+# line 352
+broker_url = amqp://guest:guest@localhost:5672//
+# line
+result_backend = amqp://guest:guest@localhost:5672//
+
+# Install dependencies
+
+sudo pip3 install apache-airflow[postgres]
+sudo pip3 install apache-airflow[celery]
+sudo pip3 install apache-airflow[rabbitmq]
+
+# Reboot instance (from Ec2)
+
+# Restart db
+
+airflow initdb
+
+# Start webserver and connect to instance port 8080 to see if it's working.
+
+airflow webserver
+
+# If you see the webserver on, you are good for now. Close the server and terminate the webserver process.
+
+# Install RabbitMQ
+
+sudo apt-get install rabbitmq-server -y
+
+sudo vi /etc/rabbitmq/rabbitmq-env.conf
+NODE_IP_ADDRESS=0.0.0.0
+
+# Start rabbitmq
+
+sudo service rabbitmq-server start
+
+# A note on celery: there may be incompatibilities, if so install celery with version <4
+
+# Create dags on airflow
+
+mkdir $AIRFLOW_HOME/dags
+sudo vi example_dags.py
+
+# Add example_dags.py from aiflow folder
+
+# Initiate airflow
+
+airflow webserver -D
+airflow scheduler -D
+airflow worker -D
+
+# Extra steps: get extra parameters, look into this after fixing other stuff
+
+https://medium.com/a-r-g-o/installing-apache-airflow-on-ubuntu-aws-6ebac15db211
+
+
+
+
+
+
+
+
