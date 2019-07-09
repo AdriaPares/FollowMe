@@ -1,7 +1,8 @@
 from kafka import KafkaProducer
-import boto3
 import json
 import datetime as dt
+import random
+import time
 
 
 def get_kafka_producer() -> KafkaProducer:
@@ -17,29 +18,23 @@ def get_streamer_names(file_name: str) -> dict:
 
 if __name__ == '__main__':
 
-    s3 = boto3.resource('s3')
     platform = 'twitter'
-    current_file_timestamp = '2000-01-01_00-00-00_'
     time_format = '%Y-%m-%d_%H-%M-%S_'
     current_producer_timestamp = dt.datetime.now().strftime(time_format)
 
-    streamer_names = get_streamer_names('random_accounts.json')
+    streamer_names = get_streamer_names('accounts_info.json')
     producer = get_kafka_producer()
 
+    t = time.time()
     while True:
-        for streamer_name in streamer_names.keys():
-            try:
-                content_object = s3.Object('insight-api-dumps',
-                                           current_file_timestamp + platform + '_' + streamer_name + '.json')
-                file_content = content_object.get()['Body'].read().decode('utf-8')
-                json_content = json.loads(file_content)
-                producer.send(platform+'-topic', value={current_producer_timestamp + streamer_name: json_content['total']})
-            except Exception as e:
-                if e.response['Error']['Code'] == 'NoSuchKey':
-                    pass
-                else:
-                    print('Unknown error.')
-        current_file_timestamp = dt.datetime.strftime(dt.datetime.strptime(current_file_timestamp, time_format)
-                                                      + dt.timedelta(seconds=1), time_format)
+        for streamer_name, platform_data in streamer_names.items():
+            choice = random.uniform(0.99, 1.01)
+            platform_data['platform_data'][platform]['total_followers'] *= choice
+            producer.send(platform+'-topic', value={current_producer_timestamp + streamer_name:
+                                                    int(platform_data['platform_data'][platform]['total_followers'])})
+
         current_producer_timestamp = dt.datetime.strftime(dt.datetime.strptime(current_producer_timestamp, time_format)
                                                           + dt.timedelta(seconds=1), time_format)
+        print(time.time() - t)
+        t = time.time()
+        time.sleep(0.95)
