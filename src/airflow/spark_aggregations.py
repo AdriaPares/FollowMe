@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 default_args = {
     'owner': 'insight',
     'depends_on_past': False,
-    'start_date': datetime.today(),
+    'start_date': datetime(2019, 6, 1),
     'email': ['airflow@gmail.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -14,7 +14,7 @@ default_args = {
 }
 
 # Run once at midnight every day
-dag = DAG('spark_aggregations', default_args=default_args, schedule_interval='0 0 * * *')
+dag = DAG('spark_aggregations', default_args=default_args, schedule_interval='0 0 * * *', catchup=False)
 
 user = 'ubuntu'
 host = 'ec2-3-218-220-243.compute-1.amazonaws.com'

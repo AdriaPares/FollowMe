@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 default_args = {
     'owner': 'insight',
     'depends_on_past': False,
-    'start_date': datetime.today(),
+    'start_date': datetime(2019, 6, 1),
     'email': ['airflow@gmail.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -15,7 +15,7 @@ default_args = {
 
 # Run once an hour at the beginning of the hour, except for hour zero (midnight)
 # At that time, hour_to_day runs this dag as a subset of its execution, so we don't require this one
-dag = DAG('spark_minute_to_hour', default_args=default_args, schedule_interval='0 1-23 * * *')
+dag = DAG('spark_minute_to_hour', default_args=default_args, schedule_interval='0 1-23 * * *', catchup=False)
 
 user = 'ubuntu'
 host = 'ec2-3-218-220-243.compute-1.amazonaws.com'
