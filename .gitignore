@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+ignored_files/
 flask/ignored_files/
 data_ingestion/kafka/old_stuff/
 cassandra/cassandra_ignored_files/

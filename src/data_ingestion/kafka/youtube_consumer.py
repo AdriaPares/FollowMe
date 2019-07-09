@@ -22,7 +22,7 @@ if __name__ == '__main__':
     session = cluster.connect('')
 
     prepared_query = session.prepare(
-        "insert into insight.youtube_live (streamer, timestamp, follower_count) values (?,?,?)")
+        "insert into insight.youtube_live (timestamp, streamer, follower_count) values (?,?,?)")
 
     consumer = get_kafka_consumer('youtube-topic', 'youtube-group')
     for message in consumer:

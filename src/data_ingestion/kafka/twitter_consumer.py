@@ -22,10 +22,8 @@ if __name__ == '__main__':
     session = cluster.connect('')
 
     prepared_query = session.prepare(
-        "insert into insight.twitch_live (streamer, timestamp, follower_count) values (?,?,?)")
+        "insert into insight.twitter_live (timestamp, streamer, follower_count) values (?,?,?)")
 
-    consumer = get_kafka_consumer('twitch-topic', 'twitch-group')
+    consumer = get_kafka_consumer('twitter-topic', 'twitter-group')
     for message in consumer:
         insert(message)
-
-
