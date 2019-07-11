@@ -1,0 +1,11 @@
+# To call a producer:
+
+python3 producer.py youtube
+python3 producer.py twitter
+python3 producer.py twitch
+
+# To call a consumer:
+
+python3 consumer.py youtube
+python3 consumer.py twitter
+python3 consumer.py twitch

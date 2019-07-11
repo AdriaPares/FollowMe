@@ -3,6 +3,7 @@ import json
 import datetime as dt
 import random
 import time
+import sys
 
 
 def get_kafka_producer() -> KafkaProducer:
@@ -16,9 +17,27 @@ def get_streamer_names(file_name: str) -> dict:
     return streamers
 
 
+def get_platform(admitted_platforms: list = ['twitch', 'twitter', 'youtube']):
+    # sys.argv[0] is the name of the script, always present
+    if len(sys.argv) == 1 or len(sys.argv) > 2:
+        print('Producer requires exactly one argument. Options available:')
+        for plat in admitted_platforms:
+            print(plat)
+        sys.exit()
+    else:
+        platform_passed = str(sys.argv[1])
+        if platform_passed not in admitted_platforms:
+            print('Unrecognized platform' + platform_passed + '. Options available:')
+            for plat in admitted_platforms:
+                print(plat)
+            sys.exit()
+        else:
+            return platform_passed
+
+
 if __name__ == '__main__':
 
-    platform = 'twitch'
+    platform = get_platform()
     time_format = '%Y-%m-%d_%H-%M-%S_'
     current_producer_timestamp = dt.datetime.now().strftime(time_format)
 
@@ -37,4 +56,4 @@ if __name__ == '__main__':
                                                           + dt.timedelta(seconds=1), time_format)
         print(time.time() - t)
         t = time.time()
-        time.sleep(0.95)
+        time.sleep(0.95)  # This only remains while we scale up the data
