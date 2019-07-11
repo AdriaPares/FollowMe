@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import numpy as np
 from cassandra.cluster import Cluster, Session
+from random import uniform
 
 
 # Writes data to Cassandra Cluster
@@ -41,13 +42,13 @@ def random_walk_day_generator(streamer: str, accounts_data: dict, time_format: s
     youtube_simulations = get_number_of_simulations(dt.datetime.strptime(initial_date_youtube, time_format))
 
     random_steps_twitter = ([0] * (simulations - twitter_simulations)) + \
-                           bounded_random_walk(twitter_simulations, 0, followers_twitter, followers_twitter * 0.01)
+                           bounded_random_walk(twitter_simulations, 0, followers_twitter, followers_twitter * 0.1)
 
     random_steps_twitch = ([0] * (simulations - twitch_simulations)) + \
-                          bounded_random_walk(twitch_simulations, 0, followers_twitch, followers_twitch * 0.01)
+                          bounded_random_walk(twitch_simulations, 0, followers_twitch, followers_twitch * 0.1)
 
     random_steps_youtube = ([0] * (simulations - youtube_simulations)) + \
-                           bounded_random_walk(youtube_simulations, 0, followers_youtube, followers_youtube * 0.01)
+                           bounded_random_walk(youtube_simulations, 0, followers_youtube, followers_youtube * 0.1)
 
     for i, (twitter_step, twitch_step, youtube_step) in enumerate(
             zip(random_steps_twitter, random_steps_twitch, random_steps_youtube)):
@@ -67,11 +68,14 @@ def random_walk_hour_generator(streamer: str, accounts_data: dict, time_format: 
     followers_twitch = accounts_data.get('platform_data').get('twitch').get('total_followers')
     followers_youtube = accounts_data.get('platform_data').get('youtube').get('total_followers')
 
-    random_steps_twitter = bounded_random_walk(simulations, 0, followers_twitter, followers_twitter * 0.01)
+    random_steps_twitter = bounded_random_walk(simulations, followers_twitter,
+                                               followers_twitter * uniform(0.9, 1.1), followers_twitter * 0.1)
 
-    random_steps_twitch = bounded_random_walk(simulations, 0, followers_twitch, followers_twitch * 0.01)
+    random_steps_twitch = bounded_random_walk(simulations, followers_twitch,
+                                              followers_twitch * uniform(0.9, 1.1), followers_twitch * 0.1)
 
-    random_steps_youtube = bounded_random_walk(simulations, 0, followers_youtube, followers_youtube * 0.01)
+    random_steps_youtube = bounded_random_walk(simulations, followers_youtube,
+                                               followers_youtube * uniform(0.9, 1.1), followers_youtube * 0.1)
 
     # Get two days ago at 00:00
     initial_datetime = dt.datetime.strptime(initial_datetime.strftime('%Y-%m-%d') + '_00', time_format)
@@ -94,11 +98,14 @@ def random_walk_minute_generator(streamer: str, accounts_data: dict, time_format
     followers_twitch = accounts_data.get('platform_data').get('twitch').get('total_followers')
     followers_youtube = accounts_data.get('platform_data').get('youtube').get('total_followers')
 
-    random_steps_twitter = bounded_random_walk(simulations, 0, followers_twitter, followers_twitter * 0.01)
+    random_steps_twitter = bounded_random_walk(simulations, followers_twitter,
+                                               followers_twitter * uniform(0.9, 1.1), followers_twitter * 0.1)
 
-    random_steps_twitch = bounded_random_walk(simulations, 0, followers_twitch, followers_twitch * 0.01)
+    random_steps_twitch = bounded_random_walk(simulations, followers_twitch,
+                                              followers_twitch * uniform(0.9, 1.1), followers_twitch * 0.1)
 
-    random_steps_youtube = bounded_random_walk(simulations, 0, followers_youtube, followers_youtube * 0.01)
+    random_steps_youtube = bounded_random_walk(simulations, followers_youtube,
+                                               followers_youtube * uniform(0.9, 1.1), followers_youtube * 0.1)
 
     # Get two days ago at 00:00
     initial_datetime = dt.datetime.strptime(initial_datetime.strftime('%Y-%m-%d_%H') + '-00', time_format)
