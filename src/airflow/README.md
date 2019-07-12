@@ -41,19 +41,19 @@ You can learn more about the Spark jobs [here](../spark/README.md).
 ## Instance Type and Architecture
 
 Airflow runs on a dedicated m5.large instance with an Elastic IP and 80 GB of EBS. This instance only runs Airflow.
-In terms of security groups, we use need:
+In terms of security groups, we need:
 * SSH access
-* Port 8080 open to access the Webserver
+* Port 8080 open to access the Airflow Webserver
 * Ability to SSH into the Spark Master
 
 ## Installation and Prerequisites
 
-To install Airflow, simply follow the instructions from their website. Our implementation doesn't use any other database
-or executor as we don't need them for now.
+To install Airflow, simply follow the [instructions](https://airflow.apache.org/installation.html). 
+Our implementation doesn't use any other database or executor as we don't need them for now.
 
-In order to run the DAGs correctly, you will also need to set up a public SSH key between Airflow and Spark Master, so that
+In order to run the DAGs correctly, you will also need to set up a public RSA key between Airflow and Spark Master, so that
 we can ssh between them without a need for a password. You can also modify the DAGs to establish a connection using a 
-password.
+password if you prefer.
 
 ## Scripts
 
