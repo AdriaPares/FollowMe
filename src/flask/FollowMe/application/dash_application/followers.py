@@ -1,66 +1,6 @@
 """Create a Dash app within a Flask app."""
-from dash import Dash
-import pandas as pd
-from .layout import html_layout
-from dash.dependencies import Output, Input
-import dash_core_components as dcc
-import dash_html_components as html
-import plotly.graph_objs as go
-from cassandra.cluster import Cluster, Session
-from cassandra.query import PreparedStatement
-import dash_bootstrap_components as dbc
 from datetime import datetime as dt
-
-
-def get_layout() -> go.Layout:
-    layout = go.Layout(
-            xaxis=dict(
-                showline=True,
-                showgrid=False,
-                showticklabels=True,
-                linecolor='rgb(204, 204, 204)',
-                linewidth=2,
-                ticks='outside',
-                tickcolor='rgb(204, 204, 204)',
-                tickwidth=2,
-                ticklen=5,
-                tickfont=dict(
-                    family='Arial',
-                    size=12,
-                    color='rgb(82, 82, 82)',
-                ),
-            ),
-            yaxis=dict(
-                showgrid=True,
-                zeroline=False,
-                showline=True,
-                showticklabels=True,
-            ),
-            autosize=False,
-            margin=dict(
-                autoexpand=False,
-                l=100,
-                r=20,
-                t=110,
-            ),
-            showlegend=False,
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
-    return layout
-
-
-def get_annotations(time_frame: str) -> list:
-    return [dict(
-            xref='paper', yref='paper', x=0.0, y=1.05,
-            xanchor='left', yanchor='bottom',
-            text='Social Media ' + time_frame,
-            font=dict(family='Arial', size=30, color='rgb(37,37,37)'),
-            showarrow=False)]
-
-
-def get_data_frame(session: Session, prepared_query: PreparedStatement, user: str) -> pd.DataFrame:
-    return session.execute(prepared_query, (user,))._current_rows
+from .flask_functions import *
 
 
 def get_traces(x_data: list, y_data: list, people: int) -> list:
@@ -108,9 +48,7 @@ def Add_Dash(server):
     x_name = 'timestamp'
     y_name = 'follower_count'
 
-    cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-    session = cluster.connect()
-    session.set_keyspace('insight')
+    session = connect_cassandra_cluster()
     session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
     session.default_fetch_size = 100000
 
@@ -221,9 +159,9 @@ def init_callbacks(dash_app, session, x_name, y_name,
         time_format_in = '%Y-%m-%d_%H-%M-%S'
         time_format_out = '%Y-%m-%d %H:%M:%S'
 
-        df_youtube = get_data_frame(session, prepared_query_youtube_live, user)
-        df_twitch = get_data_frame(session, prepared_query_twitch_live, user)
-        df_twitter = get_data_frame(session, prepared_query_twitter_live, user)
+        df_youtube = get_data_frame_with_parameter(session, prepared_query_youtube_live, user)
+        df_twitch = get_data_frame_with_parameter(session, prepared_query_twitch_live, user)
+        df_twitter = get_data_frame_with_parameter(session, prepared_query_twitter_live, user)
 
         x_data = [change_time_format(df_youtube[x_name], time_format_in, time_format_out),
                   change_time_format(df_twitter[x_name], time_format_in, time_format_out),
@@ -244,7 +182,7 @@ def init_callbacks(dash_app, session, x_name, y_name,
         time_format_in = '%Y-%m-%d_%H-%M'
         time_format_out = '%Y-%m-%d %H:%M'
 
-        df_minute = get_data_frame(session, prepared_query_minute, user)
+        df_minute = get_data_frame_with_parameter(session, prepared_query_minute, user)
         x_data_reformatted = change_time_format(df_minute[x_name], time_format_in, time_format_out)
 
         x_data = [x_data_reformatted, x_data_reformatted, x_data_reformatted]
@@ -264,7 +202,7 @@ def init_callbacks(dash_app, session, x_name, y_name,
         time_format_in = '%Y-%m-%d_%H'
         time_format_out = '%Y-%m-%d %H'
 
-        df_hour = get_data_frame(session, prepared_query_hour, user)
+        df_hour = get_data_frame_with_parameter(session, prepared_query_hour, user)
         x_data_reformatted = change_time_format(df_hour[x_name], time_format_in, time_format_out)
 
         x_data = [x_data_reformatted, x_data_reformatted, x_data_reformatted]
@@ -281,7 +219,7 @@ def init_callbacks(dash_app, session, x_name, y_name,
                         Input('user', 'value')])
     def update_day_graph(n, user):
 
-        df_day = get_data_frame(session, prepared_query_day, user)
+        df_day = get_data_frame_with_parameter(session, prepared_query_day, user)
 
         x_data = [df_day[x_name], df_day[x_name], df_day[x_name]]
         y_data = [df_day['youtube_count'], df_day['twitter_count'], df_day['twitch_count']]

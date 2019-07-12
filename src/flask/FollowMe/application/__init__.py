@@ -14,10 +14,6 @@ def create_app():
         from . import routes
         app.register_blueprint(routes.main_bp)
 
-        # Import Dash application
-        from .dash_application import trends
-        app = trends.Add_Dash(app)
-
         # Second import
         from .dash_application import followers
         app = followers.Add_Dash(app)

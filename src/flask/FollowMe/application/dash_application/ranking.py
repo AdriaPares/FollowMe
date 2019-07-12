@@ -1,36 +1,12 @@
-"""Create a Dash app within a Flask app."""
-
-from dash import Dash
-import pandas as pd
-from .layout import html_layout
-from dash.dependencies import Output, Input
-import dash_core_components as dcc
-import dash_html_components as html
-from cassandra.cluster import Cluster, Session
-from cassandra.query import PreparedStatement, SimpleStatement
 import datetime as dt
-import dash_bootstrap_components as dbc
 import dash_table
-
-
-def connect_cassandra_cluster(cluster=('10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'), keyspace='insight'):
-    cluster = Cluster(list(cluster))
-    session = cluster.connect()
-    session.set_keyspace(keyspace)
-    return session
-
-
-def get_data_frame_with_parameter(session: Session, prepared_query: PreparedStatement, parameter: str) -> pd.DataFrame:
-    return session.execute(prepared_query, (parameter,))._current_rows
-
-
-def get_data_frame_no_parameter(session: Session, prepared_query: str) -> pd.DataFrame:
-    return session.execute(prepared_query)._current_rows
+from .flask_functions import *
 
 
 def get_joined_data_frame(session: Session, query_accounts: str, query_games: str,
                           prepared_query_day: PreparedStatement, timestamp: str) -> pd.DataFrame:
-    # join users, accounts and games
+
+    """Join users, accounts and games tables from Cassandra"""
 
     accounts_df = get_data_frame_no_parameter(session, query_accounts)
     games_df = get_data_frame_no_parameter(session, query_games)
@@ -40,6 +16,8 @@ def get_joined_data_frame(session: Session, query_accounts: str, query_games: st
 
 
 def get_options(session: Session, prepared_query: str, column: str) -> list:
+    """Gets options for DropDown"""
+
     option_df = get_data_frame_no_parameter(session, prepared_query)
     return list(option_df[column].unique())
 
@@ -59,12 +37,8 @@ def Add_Dash(server):
     # Override the underlying HTML template
     dash_app.index_string = html_layout
 
-    # Add Cassandra Queries and Parameters
-    # Pass this as a dictionary of parameters, hidden in a function
-
+    # Connect to Cassandra
     session = connect_cassandra_cluster()
-    session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
-    session.default_fetch_size = 100000
 
     day = '2019-07-03'
 

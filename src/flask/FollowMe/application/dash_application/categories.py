@@ -1,22 +1,8 @@
 """Create a Dash app within a Flask app."""
 
-from dash import Dash
-import pandas as pd
-from .layout import html_layout
-from dash.dependencies import Output, Input
-import dash_core_components as dcc
-import dash_html_components as html
-from cassandra.cluster import Cluster
 import datetime as dt
-import dash_bootstrap_components as dbc
 import dash_table
-
-
-def connect_cassandra_cluster(cluster=('10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'), keyspace='insight'):
-    cluster = Cluster(list(cluster))
-    session = cluster.connect()
-    session.set_keyspace(keyspace)
-    return session
+from .flask_functions import *
 
 
 def Add_Dash(server):
@@ -34,13 +20,11 @@ def Add_Dash(server):
     # Override the underlying HTML template
     dash_app.index_string = html_layout
 
-    # Add Cassandra Queries and Parameters
-    # Pass this as a dictionary of parameters, hidden in a function
-
+    # Initialize Cassandra Session
     session = connect_cassandra_cluster()
 
+    # Set the day and date dictionary
     day = '2019-05-26'
-
     date_dict = {
         'yesterday': dt.datetime.strftime(dt.datetime.strptime(day, '%Y-%m-%d') - dt.timedelta(days=1), '%Y-%m-%d'),
         'last_week': dt.datetime.strftime(dt.datetime.strptime(day, '%Y-%m-%d') - dt.timedelta(weeks=1), '%Y-%m-%d'),
@@ -48,7 +32,6 @@ def Add_Dash(server):
     }
 
     # Create Dash Layout comprised of Data Tables
-
     dash_app.layout = html.Div(
         children=get_categories(),
         id='dash-container'
@@ -109,8 +92,6 @@ def init_callbacks(dash_app, session, date_dict):
                         Input('category', 'value')])
     def update_table(date, category):
 
-        session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
-        session.default_fetch_size = 100000
         query_timestamp = date_dict[date]
         table_df = session.execute("select " + category + ", total_count from " + category +
                                    "_aggregation where timestamp='" + query_timestamp +"' ;")._current_rows

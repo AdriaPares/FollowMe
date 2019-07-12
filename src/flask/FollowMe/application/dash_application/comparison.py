@@ -9,45 +9,7 @@ import plotly.graph_objs as go
 from cassandra.cluster import Cluster, Session
 from cassandra.query import PreparedStatement
 import dash_bootstrap_components as dbc
-
-
-def get_layout() -> go.Layout:
-    layout = go.Layout(
-            xaxis=dict(
-                showline=True,
-                showgrid=False,
-                showticklabels=True,
-                linecolor='rgb(204, 204, 204)',
-                linewidth=2,
-                ticks='outside',
-                tickcolor='rgb(204, 204, 204)',
-                tickwidth=2,
-                ticklen=5,
-                tickfont=dict(
-                    family='Arial',
-                    size=12,
-                    color='rgb(82, 82, 82)',
-                ),
-            ),
-            yaxis=dict(
-                showgrid=True,
-                zeroline=False,
-                showline=True,
-                showticklabels=True,
-            ),
-            autosize=False,
-            margin=dict(
-                autoexpand=False,
-                l=100,
-                r=20,
-                t=110,
-            ),
-            showlegend=True,
-            legend=dict(x=0, y=.8),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
-    return layout
+from .flask_functions import *  # get_layout, get_annotations, connect_cassandra_cluster
 
 
 def get_annotations(platform: str) -> list:
@@ -98,19 +60,17 @@ def Add_Dash(server):
     # Add Cassandra Queries and Parameters
     # Pass this as a dictionary of parameters, hidden in a function
 
+    # Get streamers names, and prepare the dropdown options
+    session = connect_cassandra_cluster()
+    session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
+    session.default_fetch_size = 100000
+
     x_name = 'timestamp'
-    cluster = Cluster(['10.0.0.5', '10.0.0.7', '10.0.0.12', '10.0.0.19'])
-    session = cluster.connect()
-    session.set_keyspace('insight')
 
     prepared_query_day = session.prepare("select timestamp, twitch_count, twitter_count, youtube_count, total_count "
                                          "from unified_day where streamer=?")
 
     prepared_query_accounts = session.prepare("select streamer from insight.accounts;")
-
-    # Get streamers names, and prepare the dropdown options
-    session.row_factory = lambda x, y: pd.DataFrame(y, columns=x)
-    session.default_fetch_size = 100000
 
     streamers = session.execute(prepared_query_accounts)._current_rows
 
