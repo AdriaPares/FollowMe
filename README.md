@@ -20,6 +20,7 @@ You can check the website here ([FollowMe](http://towardsdataengineering.com))
     1. [Pulsar](#substitute-spark-batch-for-spark-streamingkafka-streams-pulsar)
     2. [Terraform](#implement-self-healing-componenet-with-terraform)
 5. [Slides](#slides)
+6. [Website & Video](#website--video)
 6. [If you are an Insight Fellow...](#if-you-are-an-insight-fellow)
 7. [Credits](#credits)
 
@@ -156,6 +157,13 @@ that can take down a failing node and spin up a new one.
 
 You can check the presentation slides 
 [here](https://docs.google.com/presentation/d/1UpNmw95wN_NGe13Dzem3Er8Wz7eA51D9ndEI0FDk3TQ/edit#slide=id.g5c9bf8bdec_0_0)
+
+
+## Website & Video
+
+You can check the website [here](http://towardsdataengineering.com).
+
+If the website is down, you can also check a video demo [here](https://www.youtube.com/watch?v=kklPSmoyZfU)
 
 ## If you are an Insight Fellow...
 
