@@ -21,6 +21,7 @@ host = 'ec2-3-218-220-243.compute-1.amazonaws.com'
 bash_script_live_to_minute = "'bash /home/ubuntu/cassandra_jobs/spark_live_to_minute.sh'"
 bash_script_minute_to_hour = "'bash /home/ubuntu/cassandra_jobs/spark_minute_to_hour.sh'"
 bash_script_hour_to_day = "'bash /home/ubuntu/cassandra_jobs/spark_hour_to_day.sh'"
+bash_script_aggregations = "'bash /home/ubuntu/cassandra_jobs/spark_aggregations.sh'"
 
 spark_live_to_minute = BashOperator(
     task_id='spark_live_to_minute',
@@ -35,6 +36,11 @@ spark_minute_to_hour = BashOperator(
 spark_hour_to_day = BashOperator(
     task_id='spark_hour_to_day',
     bash_command='ssh ' + user + '@' + host + ' ' + bash_script_hour_to_day,
+    dag=dag)
+
+spark_aggregations = BashOperator(
+    task_id='spark_aggregations',
+    bash_command='ssh ' + user + '@' + host + ' ' + bash_script_aggregations,
     dag=dag)
 
 spark_live_to_minute >> spark_minute_to_hour >> spark_hour_to_day

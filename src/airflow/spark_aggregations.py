@@ -18,7 +18,7 @@ dag = DAG('spark_aggregations', default_args=default_args, schedule_interval='0 
 
 user = 'ubuntu'
 host = 'ec2-3-218-220-243.compute-1.amazonaws.com'
-bash_script_aggregations = "'bash /home/ubuntu/cassandra_jobs/metadata_aggregations.sh'"
+bash_script_aggregations = "'bash /home/ubuntu/cassandra_jobs/spark_aggregations.sh'"
 
 spark_aggregations = BashOperator(
     task_id='spark_aggregations',
