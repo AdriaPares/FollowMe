@@ -155,7 +155,7 @@ that can take down a failing node and spin up a new one.
 ## Slides
 
 You can check the presentation slides 
-[here](https://docs.google.com/presentation/d/1UpNmw95wN_NGe13Dzem3Er8Wz7eA51D9ndEI0FDk3TQ/edit#slide=id.g5c9bf8bdec_0_0)
+[here](https://docs.google.com/presentation/d/e/2PACX-1vShx3whBdO9bRdshWfwdOI8dRcIK38VbDA2mL72-aV5L3FMhmy0efhU5SEzIXQYPpkD2Snyz0Rt4Fn_/pub?start=false&loop=false&delayms=3000).
 
 ## If you are an Insight Fellow...
 
